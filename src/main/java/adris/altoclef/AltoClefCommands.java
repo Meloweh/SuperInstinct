@@ -33,6 +33,8 @@ public class AltoClefCommands {
                 new PunkCommand(),
                 new HeroCommand(),
                 new SetGammaCommand(),
+                new RoundtripCommand(),
+                new BuildCommand(),
                 new ListCommand()
                 //new TestMoveInventoryCommand(),
                 //    new TestSwapInventoryCommand()

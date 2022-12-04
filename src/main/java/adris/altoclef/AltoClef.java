@@ -19,6 +19,8 @@ import adris.altoclef.trackers.storage.ItemStorageTracker;
 import adris.altoclef.ui.CommandStatusOverlay;
 import adris.altoclef.ui.MessagePriority;
 import adris.altoclef.ui.MessageSender;
+import adris.altoclef.util.CubeBounds;
+import adris.altoclef.util.filestream.AvoidanceFile;
 import adris.altoclef.util.helpers.InputHelper;
 import baritone.Baritone;
 import baritone.altoclef.AltoClefSettings;
@@ -349,6 +351,62 @@ public class AltoClef implements ModInitializer {
      */
     public adris.altoclef.Settings getModSettings() {
         return _settings;
+    }
+
+
+    public void loadAvoidanceFile() {
+        //TODO: If many constructions are saved then maybe it makes sense to only load avoidance for loaded chunks.
+        //if (_settings.isUseAvoidanceList()) {
+        AvoidanceFile.get().forEach(e -> getBehaviour().avoidBlockBreaking(e));
+        //}
+
+        //System.out.append(getBehaviour().getAvoidanceCount() + " AVOIDANCES");
+    }
+
+    public void reloadAvoidanceFile() {
+        getBehaviour().clearFileDataFromAvoidBLockBreaking();
+        loadAvoidanceFile();
+    }
+
+    /**
+     * Keep the reference save to remove it from the avoidance list later if required.
+     *
+     * @param bounds - it MUST have the original prediacte ref object inside.
+     */
+    public void addToAvoidanceFileAndUpdate(final CubeBounds bounds) {
+        setAvoidanceOf(bounds);
+        //getBehaviour().avoidBlockBreaking(bounds.getPredicate());
+        AvoidanceFile.append(bounds);
+    }
+
+    public void addToAvoidanceFile(final CubeBounds bounds) {
+        AvoidanceFile.append(bounds);
+    }
+
+    public boolean inAvoidance(final CubeBounds bounds) {
+        return getBehaviour().inAvoidBlockBreaking(bounds.getPredicate());
+    }
+
+    /*
+    public boolean removeFromAvoidanceFileAndUpdate(final CubeBounds bounds) {
+        getBehaviour().clearFileDataFromAvoidBLockBreaking();
+        final boolean result = AvoidanceFile.remove(bounds);
+        loadAvoidanceFile();
+
+        return result;
+        //return AvoidanceFile.remove(low, high) & getBehaviour().removeAvoidBlockBreaking();
+    }*/
+
+    public boolean unsetAvoidanceOf(final CubeBounds bounds) {
+        return getBehaviour().disableAvoidanceOf(bounds.getPredicate());
+    }
+
+    public void clearAvoidances() {
+        getBehaviour().clearAvoidances();
+    }
+
+    public void setAvoidanceOf(final CubeBounds bounds) {
+        getBehaviour().avoidBlockBreaking(bounds.getPredicate());
     }
 
     /**

@@ -1,5 +1,6 @@
 package adris.altoclef;
 
+import adris.altoclef.util.filestream.AvoidanceFile;
 import adris.altoclef.util.slots.Slot;
 import baritone.altoclef.AltoClefSettings;
 import baritone.api.Settings;
@@ -17,6 +18,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Represents the current behaviour/"on the fly settings" of the bot.
@@ -95,6 +97,35 @@ public class BotBehaviour {
 
     public List<Pair<Slot, Predicate<ItemStack>>> getConversionSlots() {
         return current().conversionSlots;
+    }
+
+    public boolean inAvoidBlockBreaking(final Predicate<BlockPos> originalRef) {
+        return current().toAvoidBreaking.contains(originalRef);
+    }
+
+    /**
+     * Call BEFORE clearing AvoidanceFile.
+     */
+    public boolean clearFileDataFromAvoidBLockBreaking() {
+        //AvoidanceFile.get().forEach(e -> current().toAvoidBreaking.remo(e));
+        final boolean result = current().toAvoidBreaking.removeAll(AvoidanceFile.get());
+        current().applyState();
+        return result;
+    }
+
+    public boolean disableAvoidanceOf(final Predicate<BlockPos> originalRef) {
+        //current().toAvoidBreaking.clear();
+        current().toAvoidBreaking = current().toAvoidBreaking.stream().filter(e -> originalRef.negate() == e).collect(Collectors.toList());
+        //current().toAvoidBreaking.removeIf(e -> e.and(originalRef) == originalRef);
+        //final boolean result = current().toAvoidBreaking.remove(originalRef);
+        current().applyState();
+        //return result;
+        return false;
+    }
+
+    public void clearAvoidances() {
+        current().toAvoidBreaking.clear();
+        current().applyState();
     }
 
     public void markSlotAsConversionSlot(Slot slot, Predicate<ItemStack> itemBelongsHere) {
