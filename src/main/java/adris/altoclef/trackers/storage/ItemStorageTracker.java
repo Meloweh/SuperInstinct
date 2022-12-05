@@ -3,21 +3,29 @@ package adris.altoclef.trackers.storage;
 import adris.altoclef.AltoClef;
 import adris.altoclef.trackers.Tracker;
 import adris.altoclef.trackers.TrackerManager;
+import adris.altoclef.util.CraftingRecipe;
 import adris.altoclef.util.ItemTarget;
+import adris.altoclef.util.RecipeTarget;
+import adris.altoclef.util.helpers.BaritoneHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.*;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.recipe.Ingredient;
+import net.minecraft.recipe.Recipe;
+import net.minecraft.recipe.RecipeType;
+import net.minecraft.screen.CraftingScreenHandler;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Access ALL forms of storage.
@@ -279,6 +287,199 @@ public class ItemStorageTracker extends Tracker {
     public Optional<BlockPos> getLastBlockPosInteraction() {
         return Optional.ofNullable(_containers.getLastBlockPosInteraction());
     }
+
+    /////Meloweh's crafting helpers start/////
+    public List<Item> getBlockTypes() {
+        ensureUpdated();
+        synchronized (BaritoneHelper.MINECRAFT_LOCK) {
+            return _inventory.getInventoryStacks(true)
+                    .stream()
+                    .filter(e -> e.getItem() instanceof BlockItem)
+                    .map(e -> e.getItem())
+                    .collect(Collectors.toList());
+        }
+    }
+
+    /**
+     * RecipesUtils supplies several methods for easing the process of removing existing recipes,
+     * as well as a helper method for making a 9x9 grid of the same item (nuggets to ingots, etc)
+     * https://github.com/Draco18s/ReasonableRealism/blob/1.12.1/src/main/java/com/draco18s/hardlib/util/RecipesUtils.java#L164
+     *
+     * @author Draco18s, Meloweh
+     */
+    @Nullable
+    public static Recipe getRecipeWithOutput(ItemStack resultStack) {
+        ItemStack recipeResult;
+        List<net.minecraft.recipe.CraftingRecipe> recipes = MinecraftClient.getInstance().world.getRecipeManager().listAllOfType(RecipeType.CRAFTING);
+        Iterator<net.minecraft.recipe.CraftingRecipe> iterator = recipes.iterator();
+        while(iterator.hasNext()) {
+            Recipe tmpRecipe = iterator.next();
+            recipeResult = tmpRecipe.getOutput();
+            if (ItemStack.areItemsEqual(resultStack, recipeResult)) {
+                return tmpRecipe;
+            }
+        }
+        return null;
+    }
+
+    public final int getItemCountOfSlot(final Slot slot) {
+        if (slot == null) return -1;
+        final ItemStack stack = StorageHelper.getItemStackInSlot(slot);
+        if (stack == null) return -1;
+        if (stack.getItem() == null) return 0;
+        return getItemCount(stack.getItem());
+    }
+
+    //TODO: Needs reset if generic crafting process stopped
+    //private Map<Long, DepthAttributes> depthAttributesMap = new HashMap<>();
+
+    public ItemTarget getMissingItemTarget(final AltoClef mod, final CraftingRecipe _recipe) {
+        final ItemStorageTracker inventory = mod.getItemStorage();
+        boolean bigCrafting = (mod.getPlayer().currentScreenHandler instanceof CraftingScreenHandler);
+
+        // For each slot in table
+        for (int craftSlot = 0; craftSlot < _recipe.getSlotCount(); ++craftSlot) {
+            ItemTarget toFill = _recipe.getSlot(craftSlot);
+            Slot currentCraftSlot;
+            if (bigCrafting) {
+                // Craft in table
+                currentCraftSlot = CraftingTableSlot.getInputSlot(craftSlot, _recipe.isBig());
+            } else {
+                // Craft in window
+                currentCraftSlot = PlayerSlot.getCraftInputSlot(craftSlot);
+            }
+            ItemStack present = StorageHelper.getItemStackInSlot(currentCraftSlot);
+            if (toFill == null || toFill.isEmpty()) {
+                continue;
+            } else {
+                boolean isSatisfied = toFill.matches(present.getItem());
+
+                if (!isSatisfied) {
+                    int count = 0;
+                    for (int i = 0; i < _recipe.getSlotCount(); i++) {
+                        ItemTarget toFill2 = _recipe.getSlot(craftSlot);
+                        if (toFill == null || toFill.isEmpty()) {
+                            continue;
+                        }
+
+                        if (toFill2.getMatches() == null || toFill.getMatches() == null) continue;
+                        for (Item item : toFill2.getMatches()) {
+                            ItemTarget t1 = (new ItemTarget(item));
+
+                            for (Item item2 : toFill.getMatches()) {
+                                if (t1.matches(item2)) {
+                                    count++;
+                                }
+                            }
+                        }
+
+                        count = (int)Math.ceil(count / _recipe.getSlotCount());
+                        if (count > inventory.getItemCount(toFill) && inventory.getItemCount(toFill) > 0) {
+                            return new ItemTarget(toFill, count);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean hasIngredientInAnyDepth(final Ingredient ingredient, final AltoClef mod, final List<Slot> blacklist, final List<Slot> previouslyBlacklisted) {
+        for (final ItemStack itemStack : ingredient.getMatchingStacks()) {
+            if (itemStack == null) continue;
+            if (itemStack.getItem() == null) continue;
+            if (isSlotInAnyDepthSatisfiable(new ItemTarget(itemStack.getItem()/*, itemStack.getCount()*/), mod, blacklist, previouslyBlacklisted)) return true;
+        }
+        return false;
+    }
+
+    private int getItemCountOfSlotsInBlacklist(final List<Slot> blacklist, final AltoClef mod) {
+        return blacklist.stream().mapToInt(e -> mod.getItemStorage().getItemCountOfSlot(e)).sum();
+    }
+
+    private boolean isSlotInList(final Slot slot, final List<Slot> list) {
+        return list.stream().anyMatch(e -> e.getInventorySlot() == slot.getInventorySlot());
+    }
+
+    //we can limit blacklisting to one stack = 64 since crafting slots are limited to it anyway.
+    private boolean blacklistSatisfyingSlots(final List<Slot> blacklist, final List<Slot> previouslyBlacklisted, final ItemTarget itemTarget, final AltoClef mod) {
+        final List<Slot> slots = mod.getItemStorage().getSlotsWithItemPlayerInventory(false, itemTarget.getMatches());
+        int size = 1;
+
+        for (final Slot slot : slots) {
+            if (size > getItemCountOfSlotsInBlacklist(blacklist, mod)) {
+                if (!isSlotInList(slot, blacklist) && !isSlotInList(slot, previouslyBlacklisted)) {
+                    blacklist.add(slot);
+                }
+            } else {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    final List<ItemTarget> crossed = new ArrayList<>();
+
+    private boolean isSlotInAnyDepthSatisfiable(final ItemTarget itemTarget, final AltoClef mod, final List<Slot> blacklist, final List<Slot> previouslyBlacklisted) {
+        //coding style with side effect returns "is it satisfied"?
+        if (blacklistSatisfyingSlots(blacklist, previouslyBlacklisted, itemTarget, mod)) {
+            return true;
+        }
+        if (crossed.stream().anyMatch(e -> e.getMatches(itemTarget).length > 0)) {
+            return false;
+        }
+        crossed.add(itemTarget);
+
+        for (final Iterator<Item> iterator = Arrays.stream(itemTarget.getMatches()).iterator(); iterator.hasNext();) {
+            final Item item = iterator.next();
+            final Recipe recipe = getRecipeWithOutput(item.getDefaultStack());
+
+            if (recipe == null) return false;
+
+            for (final Iterator it = recipe.getIngredients().iterator(); it.hasNext(); ) {
+                Ingredient ingredient = (Ingredient) it.next();
+
+                if (hasIngredientInAnyDepth(ingredient, mod, blacklist, previouslyBlacklisted)) return true; //found = true;
+            }
+
+            if (!iterator.hasNext()) {
+                crossed.add(itemTarget);
+            }
+        }
+
+        for (final Item item : itemTarget.getMatches()) {
+            if (crossed.stream().anyMatch(e -> e.matches(item))) {
+                return false;
+            }
+
+            final Recipe recipe = getRecipeWithOutput(item.getDefaultStack());
+            if (recipe == null) return false;
+
+            for (Iterator it = recipe.getIngredients().iterator(); it.hasNext(); ) {
+                Ingredient ingredient = (Ingredient) it.next();
+                if (hasIngredientInAnyDepth(ingredient, mod, blacklist, previouslyBlacklisted)) return true; //found = true;
+            }
+        }
+        return true;
+    }
+
+    public final boolean isFullyCapableToCraft(final AltoClef mod, final RecipeTarget recipeTarget) {
+        final CraftingRecipe recipe = recipeTarget.getRecipe();
+        if (recipe == null || mod == null) return false;
+        final List<Slot> blacklist = new ArrayList<>();
+
+        for (int i = 0; i < recipe.getSlotCount(); i++) {
+            final ItemTarget itemTarget = recipe.getSlot(i);
+            if (itemTarget == null) continue;
+            if (itemTarget.getMatches() == null) continue;
+            final List<Slot> subBlacklist = new ArrayList<>();
+            crossed.clear();
+            if (!isSlotInAnyDepthSatisfiable(itemTarget, mod, subBlacklist, blacklist)) return false;
+            blacklist.addAll(subBlacklist);
+        }
+        return true;
+    }
+    /////Meloweh's crafting helpers end/////
 
     @Override
     protected void updateState() {
