@@ -65,7 +65,7 @@ public final class RandomRadiusGoalTask extends Task {
 
     @Override
     protected boolean isEqual(Task other) {
-        return other instanceof RandomRadiusGoalTask task;
+        return other instanceof RandomRadiusGoalTask;
     }
 
     @Override

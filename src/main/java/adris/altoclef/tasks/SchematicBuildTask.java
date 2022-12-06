@@ -40,8 +40,8 @@ public class SchematicBuildTask extends Task {
     private boolean clearRunning = false;
     private String name;
     private ISchematic schematic;
-    //private static final int FOOD_UNITS = 80;
-    //private static final int MIN_FOOD_UNITS = 10;
+    private static final int FOOD_UNITS = 80;
+    private static final int MIN_FOOD_UNITS = 10;
     private final TimerGame _clickTimer = new TimerGame(120);
     private final MovementProgressChecker _moveChecker = new MovementProgressChecker(4, 0.1, 4, 0.01);
     private Task walkAroundTask;
@@ -187,28 +187,25 @@ public class SchematicBuildTask extends Task {
             }
 
             builder.resume();
-            Debug.logMessage("Resuming build process...");
-            System.out.println("Resuming builder...");
+            //Debug.logMessage("Resuming build process...");
+            //System.out.println("Resuming builder...");
         }
 
         if (_moveChecker.check(mod)) {
             _clickTimer.reset();
         }
-        if (_clickTimer.elapsed()) {
-            if (walkAroundTask == null) {
+        if (walkAroundTask == null) {
+            if (_clickTimer.elapsed()) {
+                Debug.logMessage("Timer elapsed.");
                 walkAroundTask = new RandomRadiusGoalTask(mod.getPlayer().getBlockPos(), 5d).next(mod.getPlayer().getBlockPos());
             }
-            Debug.logMessage("Timer elapsed.");
-        }
-        if (walkAroundTask != null) {
-            if (!walkAroundTask.isFinished(mod)) {
-                return walkAroundTask;
-            } else {
-                walkAroundTask = null;
-                builder.popStack();
-                _clickTimer.reset();
-                _moveChecker.reset();
-            }
+        } else if (!walkAroundTask.isFinished(mod)) {
+            return walkAroundTask;
+        } else {
+            walkAroundTask = null;
+            builder.popStack();
+            _clickTimer.reset();
+            _moveChecker.reset();
         }
 
         return null;
