@@ -35,6 +35,7 @@ public class FoodChain extends SingleTaskChain {
     private boolean _requestFillup = false;
     private boolean _needsFood = false;
     private Optional<Item> _cachedPerfectFood = Optional.empty();
+    private int _cachedFoodScore = 0;
     private boolean shouldStop = false;
 
     public FoodChain(TaskRunner runner) {
@@ -121,7 +122,7 @@ public class FoodChain extends SingleTaskChain {
             return Float.NEGATIVE_INFINITY;
         }
         Pair<Integer, Optional<Item>> calculation = calculateFood(mod);
-        int _cachedFoodScore = calculation.getLeft();
+        _cachedFoodScore = calculation.getLeft();
         _cachedPerfectFood = calculation.getRight();
 
         boolean hasFood = _cachedFoodScore > 0;
@@ -164,6 +165,10 @@ public class FoodChain extends SingleTaskChain {
 
         // Food eating is handled asynchronously.
         return Float.NEGATIVE_INFINITY;
+    }
+
+    public int getAvailableFoodScore() {
+        return _cachedFoodScore;
     }
 
     @Override

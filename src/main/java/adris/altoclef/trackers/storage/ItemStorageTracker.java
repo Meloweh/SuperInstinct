@@ -13,6 +13,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeType;
@@ -480,6 +481,171 @@ public class ItemStorageTracker extends Tracker {
         return true;
     }
     /////Meloweh's crafting helpers end/////
+
+    public Optional<Item> bestShovelInInventory() {
+        //TODO: maybe consider enchantments (It's not hard).
+        if (hasItem(Items.NETHERITE_SHOVEL)) {
+            return Optional.of(Items.NETHERITE_SHOVEL);
+        }
+        if (hasItem(Items.GOLDEN_SHOVEL)) {
+            return Optional.of(Items.GOLDEN_SHOVEL);
+        }
+        if (hasItem(Items.DIAMOND_SHOVEL)) {
+            return Optional.of(Items.DIAMOND_SHOVEL);
+        }
+        if (hasItem(Items.IRON_SHOVEL)) {
+            return Optional.of(Items.IRON_SHOVEL);
+        }
+        if (hasItem(Items.STONE_SHOVEL)) {
+            return Optional.of(Items.STONE_SHOVEL);
+        }
+        if (hasItem(Items.WOODEN_SHOVEL)) {
+            return Optional.of(Items.WOODEN_SHOVEL);
+        }
+        return Optional.empty();
+    }
+    public Optional<Item> bestAxeInInventory() {
+        //TODO: maybe consider enchantments (It's not hard).
+        if (hasItem(Items.NETHERITE_AXE)) {
+            return Optional.of(Items.NETHERITE_AXE);
+        }
+        if (hasItem(Items.GOLDEN_AXE)) {
+            return Optional.of(Items.GOLDEN_AXE);
+        }
+        if (hasItem(Items.DIAMOND_AXE)) {
+            return Optional.of(Items.DIAMOND_AXE);
+        }
+        if (hasItem(Items.IRON_AXE)) {
+            return Optional.of(Items.IRON_AXE);
+        }
+        if (hasItem(Items.STONE_AXE)) {
+            return Optional.of(Items.STONE_AXE);
+        }
+        if (hasItem(Items.WOODEN_AXE)) {
+            return Optional.of(Items.WOODEN_AXE);
+        }
+        return Optional.empty();
+    }
+    public Optional<Item> bestPickaxeInInventory() {
+        //TODO: maybe consider enchantments (It's not hard).
+        if (hasItem(Items.NETHERITE_PICKAXE)) {
+            return Optional.of(Items.NETHERITE_PICKAXE);
+        }
+        if (hasItem(Items.DIAMOND_PICKAXE)) {
+            return Optional.of(Items.DIAMOND_PICKAXE);
+        }
+        if (hasItem(Items.GOLDEN_PICKAXE)) {
+            return Optional.of(Items.GOLDEN_PICKAXE);
+        }
+        if (hasItem(Items.IRON_PICKAXE)) {
+            return Optional.of(Items.IRON_PICKAXE);
+        }
+        if (hasItem(Items.STONE_PICKAXE)) {
+            return Optional.of(Items.STONE_PICKAXE);
+        }
+        if (hasItem(Items.WOODEN_PICKAXE)) {
+            return Optional.of(Items.WOODEN_PICKAXE);
+        }
+        return Optional.empty();
+    }
+    public Optional<Item> bestSwordInInventory() {
+        //TODO: maybe consider enchantments (It's not hard).
+        if (hasItem(Items.NETHERITE_SWORD)) {
+            return Optional.of(Items.NETHERITE_SWORD);
+        }
+        if (hasItem(Items.DIAMOND_SWORD)) {
+            return Optional.of(Items.DIAMOND_SWORD);
+        }
+        if (hasItem(Items.IRON_SWORD)) {
+            return Optional.of(Items.IRON_SWORD);
+        }
+        if (hasItem(Items.STONE_SWORD)) {
+            return Optional.of(Items.STONE_SWORD);
+        }
+        if (hasItem(Items.GOLDEN_SWORD)) {
+            return Optional.of(Items.GOLDEN_SWORD);
+        }
+        if (hasItem(Items.WOODEN_SWORD)) {
+            return Optional.of(Items.WOODEN_SWORD);
+        }
+        return Optional.empty();
+    }
+    public Optional<Item> bestHelmetInInventory() {
+        //TODO: maybe consider enchantments (It's not hard).
+        if (hasItem(Items.NETHERITE_HELMET)) {
+            return Optional.of(Items.NETHERITE_HELMET);
+        }
+        if (hasItem(Items.DIAMOND_HELMET)) {
+            return Optional.of(Items.DIAMOND_HELMET);
+        }
+        if (hasItem(Items.IRON_HELMET)) {
+            return Optional.of(Items.IRON_HELMET);
+        }
+        if (hasItem(Items.GOLDEN_HELMET)) {
+            return Optional.of(Items.GOLDEN_HELMET);
+        }
+        if (hasItem(Items.LEATHER_HELMET)) {
+            return Optional.of(Items.LEATHER_HELMET);
+        }
+        return Optional.empty();
+    }
+    public Optional<Item> bestChestplateInInventory() {
+        //TODO: maybe consider enchantments (It's not hard).
+        if (hasItem(Items.NETHERITE_CHESTPLATE)) {
+            return Optional.of(Items.NETHERITE_CHESTPLATE);
+        }
+        if (hasItem(Items.DIAMOND_CHESTPLATE)) {
+            return Optional.of(Items.DIAMOND_CHESTPLATE);
+        }
+        if (hasItem(Items.IRON_CHESTPLATE)) {
+            return Optional.of(Items.IRON_CHESTPLATE);
+        }
+        if (hasItem(Items.GOLDEN_CHESTPLATE)) {
+            return Optional.of(Items.GOLDEN_CHESTPLATE);
+        }
+        if (hasItem(Items.LEATHER_CHESTPLATE)) {
+            return Optional.of(Items.LEATHER_CHESTPLATE);
+        }
+        return Optional.empty();
+    }
+    public Optional<Item> bestLeggingsInInventory() {
+        //TODO: maybe consider enchantments (It's not hard).
+        if (hasItem(Items.NETHERITE_LEGGINGS)) {
+            return Optional.of(Items.NETHERITE_LEGGINGS);
+        }
+        if (hasItem(Items.DIAMOND_LEGGINGS)) {
+            return Optional.of(Items.DIAMOND_LEGGINGS);
+        }
+        if (hasItem(Items.IRON_LEGGINGS)) {
+            return Optional.of(Items.IRON_LEGGINGS);
+        }
+        if (hasItem(Items.GOLDEN_LEGGINGS)) {
+            return Optional.of(Items.GOLDEN_LEGGINGS);
+        }
+        if (hasItem(Items.LEATHER_LEGGINGS)) {
+            return Optional.of(Items.LEATHER_LEGGINGS);
+        }
+        return Optional.empty();
+    }
+    public Optional<Item> bestBootsInInventory() {
+        //TODO: maybe consider enchantments (It's not hard).
+        if (hasItem(Items.NETHERITE_BOOTS)) {
+            return Optional.of(Items.NETHERITE_BOOTS);
+        }
+        if (hasItem(Items.DIAMOND_BOOTS)) {
+            return Optional.of(Items.DIAMOND_BOOTS);
+        }
+        if (hasItem(Items.IRON_BOOTS)) {
+            return Optional.of(Items.IRON_BOOTS);
+        }
+        if (hasItem(Items.GOLDEN_BOOTS)) {
+            return Optional.of(Items.GOLDEN_BOOTS);
+        }
+        if (hasItem(Items.LEATHER_BOOTS)) {
+            return Optional.of(Items.LEATHER_BOOTS);
+        }
+        return Optional.empty();
+    }
 
     @Override
     protected void updateState() {

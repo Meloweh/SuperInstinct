@@ -9,6 +9,7 @@ import adris.altoclef.util.slots.CursorSlot;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
 import adris.altoclef.util.time.TimerGame;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.*;
@@ -96,6 +97,28 @@ public class SlotHandler {
         } else {
             _mod.getSlotHandler().clickSlot(PlayerSlot.OFFHAND_SLOT, 0, SlotActionType.PICKUP);
         }
+    }
+
+    public boolean equipBestToolFor(final BlockState state) {
+        final Optional<Item> optBestPickaxe = _mod.getItemStorage().bestPickaxeInInventory();
+        if (optBestPickaxe.isPresent() && optBestPickaxe.get().isSuitableFor(state)) {
+            return forceEquipItem(optBestPickaxe.get());
+        }
+        final Optional<Item> optBestShovel = _mod.getItemStorage().bestShovelInInventory();
+        if (optBestShovel.isPresent() && optBestShovel.get().isSuitableFor(state)) {
+            return forceEquipItem(optBestShovel.get());
+        }
+        final Optional<Item> optBestAxe = _mod.getItemStorage().bestAxeInInventory();
+        if (optBestAxe.isPresent() && optBestAxe.get().isSuitableFor(state)) {
+            return forceEquipItem(optBestAxe.get());
+        }
+        return false;
+    }
+
+    public boolean equipBlock() {
+        final List<Item> blocks = _mod.getItemStorage().getBlockTypes();
+        if (blocks.size() < 1) return false;
+        return forceEquipItem(blocks.get(0));
     }
 
     public boolean forceEquipItem(Item toEquip) {

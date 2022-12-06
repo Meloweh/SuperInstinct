@@ -3,12 +3,14 @@ package adris.altoclef.chains;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.control.KillAura;
+import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
 import adris.altoclef.tasks.movement.CustomBaritoneGoalTask;
 import adris.altoclef.tasks.movement.DodgeProjectilesTask;
 import adris.altoclef.tasks.movement.RunAwayFromCreepersTask;
 import adris.altoclef.tasks.movement.RunAwayFromHostilesTask;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
+import adris.altoclef.tasksystem.Task;
 import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.util.baritone.CachedProjectile;
 import adris.altoclef.util.helpers.*;
@@ -52,8 +54,8 @@ public class MobDefenseChain extends SingleTaskChain {
     private boolean _doingFunkyStuff = false;
     private boolean _wasPuttingOutFire = false;
     private CustomBaritoneGoalTask _runAwayTask;
-
     private float _cachedLastPriority;
+    private BasicDefenseManager basicDefenseManager = new BasicDefenseManager();
 
     public MobDefenseChain(TaskRunner runner) {
         super(runner);
@@ -200,8 +202,13 @@ public class MobDefenseChain extends SingleTaskChain {
                 stopShielding(mod);
             }
         }
+
+        basicDefenseManager.onTick(mod);
+        if (basicDefenseManager.isWorking()) {
+            return 75;
+        }
         // Block projectiles with shield
-        if (!mod.getFoodChain().needsToEat() && mod.getModSettings().isDodgeProjectiles() && isProjectileClose(mod) &&
+        /*if (!mod.getFoodChain().needsToEat() && mod.getModSettings().isDodgeProjectiles() && isProjectileClose(mod) &&
                 (mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
                 !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null &&
                 mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
@@ -226,7 +233,7 @@ public class MobDefenseChain extends SingleTaskChain {
                 setTask(_runAwayTask);
                 return 65;
             }
-        }
+        }*/
         // Dodge all mobs cause we boutta die son
         if (isInDanger(mod) && !escapeDragonBreath(mod) && !mod.getFoodChain().isShouldStop()) {
             if (_targetEntity == null) {

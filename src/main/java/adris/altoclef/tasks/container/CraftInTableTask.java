@@ -266,9 +266,11 @@ class DoCraftInTableTask extends DoStuffInContainerTask {
             // No need to free, handled automatically I believe.
             setDebugState("Crafting");
 
+            return new CraftGenericManuallyTask(target);
+            /*
             return mod.getModSettings().shouldUseCraftingBookToCraft()
                     ? new CraftGenericWithRecipeBooksTask(target)
-                    : new CraftGenericManuallyTask(target);
+                    : new CraftGenericManuallyTask(target);*/
         }
 
         setDebugState("DONE? Shouldn't be here");

@@ -3,10 +3,14 @@ package adris.altoclef.tasks;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.TaskCatalogue;
+import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
+import adris.altoclef.tasks.misc.EquipArmorTask;
 import adris.altoclef.tasks.resources.CollectFoodTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.trackers.storage.ItemStorageTracker;
 import adris.altoclef.util.CubeBounds;
+import adris.altoclef.util.ItemTarget;
+import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
 import adris.altoclef.util.time.TimerGame;
 import baritone.api.schematic.ISchematic;
@@ -14,6 +18,7 @@ import baritone.process.BuilderProcess;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
+import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 
@@ -170,11 +175,57 @@ public class SchematicBuildTask extends Task {
                 mod.setAvoidanceOf(this.bounds);
             }
             //if (mod.getFoodChain().hasFood() < MIN_FOOD_UNITS) {
-            /*if (!mod.getFoodChain().hasFood()) {
+            if (mod.getItemStorage().bestPickaxeInInventory().isEmpty()) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_PICKAXE));
+            }
+            if (mod.getItemStorage().bestSwordInInventory().isEmpty()) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SWORD));
+            }
+            if (mod.getFoodChain().getAvailableFoodScore() < FOOD_UNITS) {
                 return new CollectFoodTask(FOOD_UNITS);
-            }*/
+            }
+            if (!CombatHelper.hasShield(mod)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.SHIELD));
+            }
+            if (mod.getItemStorage().bestSwordInInventory().get().equals(Items.STONE_SWORD)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_SWORD));
+            }
+            if (mod.getItemStorage().bestPickaxeInInventory().get().equals(Items.STONE_PICKAXE)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_PICKAXE));
+            }
+            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_CHESTPLATE)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_CHESTPLATE));
+            }
+            //TODO: isMinimumArmorEquipped
+            if (!StorageHelper.isArmorEquipped(mod, Items.IRON_CHESTPLATE)) {
+                return new EquipArmorTask(Items.IRON_CHESTPLATE);
+            }
+            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_HELMET)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_HELMET));
+            }
+            if (!StorageHelper.isArmorEquipped(mod, Items.IRON_HELMET)) {
+                return new EquipArmorTask(Items.IRON_HELMET);
+            }
+            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_LEGGINGS)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_LEGGINGS));
+            }
+            if (!StorageHelper.isArmorEquipped(mod, Items.IRON_LEGGINGS)) {
+                return new EquipArmorTask(Items.IRON_LEGGINGS);
+            }
+            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_BOOTS)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_BOOTS));
+            }
+            if (!StorageHelper.isArmorEquipped(mod, Items.IRON_BOOTS)) {
+                return new EquipArmorTask(Items.IRON_BOOTS);
+            }
             for (final BlockState state : getTodoList(mod, missing)) {
                 return TaskCatalogue.getItemTask(state.getBlock().asItem(), missing.get(state));
+            }
+            if (mod.getItemStorage().bestAxeInInventory().isEmpty()) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_AXE));
+            }
+            if (mod.getItemStorage().bestShovelInInventory().isEmpty()) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SHOVEL));
             }
             this.sourced = true;
         }
