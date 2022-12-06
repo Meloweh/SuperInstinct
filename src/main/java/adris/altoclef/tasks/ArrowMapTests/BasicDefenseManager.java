@@ -582,12 +582,12 @@ public class BasicDefenseManager {
         }
 
         switch (this.strategy) {
-            case RUN: run(mod);
-            case SHIELD: shield(mod);
-            case PLACE_SIDE: placeSide(mod);
-            case PLACE_BELOW: placeBelow(mod);
-            case DIG: dig(mod);
-            case JUMP: jump(mod);
+            case RUN: run(mod); break;
+            case SHIELD: shield(mod); break;
+            case PLACE_SIDE: placeSide(mod); break;
+            case PLACE_BELOW: placeBelow(mod); break;
+            case DIG: dig(mod); break;
+            case JUMP: jump(mod); break;
         }
         //return null;
     }
