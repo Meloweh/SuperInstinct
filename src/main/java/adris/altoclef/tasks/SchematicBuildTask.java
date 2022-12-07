@@ -263,7 +263,7 @@ public class SchematicBuildTask extends Task {
             }
 
             if (requiredIron > 0 && currentIron < requiredIron) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_INGOT));
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_INGOT, requiredIron));
             }
             for (final BlockState state : getTodoList(mod, missing)) {
                 return TaskCatalogue.getItemTask(state.getBlock().asItem(), missing.get(state));
