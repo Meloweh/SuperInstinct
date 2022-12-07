@@ -95,6 +95,15 @@ public class AvoidanceFile {
         Files.write(file.toPath(), out, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
+    public static boolean clear() {
+        try {
+            new FileOutputStream(AVOIDANCE_PATH).close();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     //TODO: uh, duplicate code... Sorry ^^'.
     public static boolean remove(final CubeBounds bounds) {
         final BlockPos low = bounds.getLow();

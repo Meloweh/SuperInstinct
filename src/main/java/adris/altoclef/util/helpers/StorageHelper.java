@@ -335,6 +335,35 @@ public class StorageHelper {
         return false;
     }
 
+    public static boolean isHelmetEquipped(AltoClef mod) {
+        return isArmorEquipped(mod, Items.LEATHER_HELMET)
+                || isArmorEquipped(mod, Items.GOLDEN_HELMET)
+                || isArmorEquipped(mod, Items.IRON_HELMET)
+                || isArmorEquipped(mod, Items.DIAMOND_HELMET)
+                || isArmorEquipped(mod, Items.NETHERITE_HELMET);
+    }
+    public static boolean isChestplateEquipped(AltoClef mod) {
+        return isArmorEquipped(mod, Items.LEATHER_CHESTPLATE)
+                || isArmorEquipped(mod, Items.GOLDEN_CHESTPLATE)
+                || isArmorEquipped(mod, Items.IRON_CHESTPLATE)
+                || isArmorEquipped(mod, Items.DIAMOND_CHESTPLATE)
+                || isArmorEquipped(mod, Items.NETHERITE_CHESTPLATE);
+    }
+    public static boolean isLeggingsEquipped(AltoClef mod) {
+        return isArmorEquipped(mod, Items.LEATHER_LEGGINGS)
+                || isArmorEquipped(mod, Items.GOLDEN_LEGGINGS)
+                || isArmorEquipped(mod, Items.IRON_LEGGINGS)
+                || isArmorEquipped(mod, Items.DIAMOND_LEGGINGS)
+                || isArmorEquipped(mod, Items.NETHERITE_LEGGINGS);
+    }
+    public static boolean isBootsEquipped(AltoClef mod) {
+        return isArmorEquipped(mod, Items.LEATHER_BOOTS)
+                || isArmorEquipped(mod, Items.GOLDEN_BOOTS)
+                || isArmorEquipped(mod, Items.IRON_BOOTS)
+                || isArmorEquipped(mod, Items.DIAMOND_BOOTS)
+                || isArmorEquipped(mod, Items.NETHERITE_BOOTS);
+    }
+
     public static int getBuildingMaterialCount(AltoClef mod) {
         return mod.getItemStorage().getItemCount(Arrays.stream(mod.getModSettings().getThrowawayItems(mod, true)).filter(item -> item instanceof BlockItem && !item.equals(Items.GRAVEL) && !item.equals(Items.SAND)).toArray(Item[]::new));
     }

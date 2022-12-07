@@ -35,7 +35,8 @@ public class AltoClefCommands {
                 new SetGammaCommand(),
                 new RoundtripCommand(),
                 new BuildCommand(),
-                new ListCommand()
+                new ListCommand(),
+                new BuilderAvoidanceCommand()
                 //new TestMoveInventoryCommand(),
                 //    new TestSwapInventoryCommand()
         );

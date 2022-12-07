@@ -193,7 +193,13 @@ public class SchematicBuildTask extends Task {
             if (mod.getItemStorage().bestPickaxeInInventory().get().equals(Items.STONE_PICKAXE)) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_PICKAXE));
             }
-            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_CHESTPLATE)) {
+            if (mod.getItemStorage().bestAxeInInventory().isEmpty()) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_AXE));
+            }
+            if (mod.getItemStorage().bestShovelInInventory().isEmpty()) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SHOVEL));
+            }
+            /*if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_CHESTPLATE)) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_CHESTPLATE));
             }
             //TODO: isMinimumArmorEquipped
@@ -217,15 +223,50 @@ public class SchematicBuildTask extends Task {
             }
             if (!StorageHelper.isArmorEquipped(mod, Items.IRON_BOOTS)) {
                 return new EquipArmorTask(Items.IRON_BOOTS);
+            }*/
+            int requiredIron = 0;
+            int currentIron = mod.getItemStorage().getItemCount(Items.IRON_BARS);
+            if (mod.getItemStorage().bestHelmetInInventory().isEmpty() && !StorageHelper.isHelmetEquipped(mod)) {
+                if (currentIron >= 5) {
+                    return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_HELMET));
+                }
+                requiredIron += 5;
+            } else if (!StorageHelper.isHelmetEquipped(mod)) {
+                return new EquipArmorTask(Items.IRON_HELMET);
+            }
+
+            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isChestplateEquipped(mod)) {
+                if (currentIron >= 8) {
+                    return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_CHESTPLATE));
+                }
+                requiredIron += 8;
+            } else if (!StorageHelper.isChestplateEquipped(mod)) {
+                return new EquipArmorTask(Items.IRON_CHESTPLATE);
+            }
+
+            if (mod.getItemStorage().bestBootsInInventory().isEmpty() && !StorageHelper.isBootsEquipped(mod)) {
+                if (currentIron >= 4) {
+                    return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_BOOTS));
+                }
+                requiredIron += 4;
+            } else if (!StorageHelper.isBootsEquipped(mod)) {
+                return new EquipArmorTask(Items.IRON_BOOTS);
+            }
+
+            if (mod.getItemStorage().bestLeggingsInInventory().isEmpty() && !StorageHelper.isLeggingsEquipped(mod)) {
+                if (currentIron >= 7) {
+                    return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_LEGGINGS));
+                }
+                requiredIron += 7;
+            } else if (!StorageHelper.isLeggingsEquipped(mod)) {
+                return new EquipArmorTask(Items.IRON_LEGGINGS);
+            }
+
+            if (requiredIron > 0 && currentIron < requiredIron) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_BARS));
             }
             for (final BlockState state : getTodoList(mod, missing)) {
                 return TaskCatalogue.getItemTask(state.getBlock().asItem(), missing.get(state));
-            }
-            if (mod.getItemStorage().bestAxeInInventory().isEmpty()) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_AXE));
-            }
-            if (mod.getItemStorage().bestShovelInInventory().isEmpty()) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SHOVEL));
             }
             this.sourced = true;
         }
