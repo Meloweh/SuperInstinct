@@ -225,7 +225,7 @@ public class SchematicBuildTask extends Task {
                 return new EquipArmorTask(Items.IRON_BOOTS);
             }*/
             int requiredIron = 0;
-            int currentIron = mod.getItemStorage().getItemCount(Items.IRON_BARS);
+            int currentIron = mod.getItemStorage().getItemCount(Items.IRON_INGOT);
             if (mod.getItemStorage().bestHelmetInInventory().isEmpty() && !StorageHelper.isHelmetEquipped(mod)) {
                 if (currentIron >= 5) {
                     return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_HELMET));
@@ -263,7 +263,7 @@ public class SchematicBuildTask extends Task {
             }
 
             if (requiredIron > 0 && currentIron < requiredIron) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_BARS));
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_INGOT));
             }
             for (final BlockState state : getTodoList(mod, missing)) {
                 return TaskCatalogue.getItemTask(state.getBlock().asItem(), missing.get(state));
