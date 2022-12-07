@@ -186,6 +186,8 @@ public class CollectFoodTask extends Task {
         // Calculate potential
         double potentialFood = calculateFoodPotential(mod);
         if (potentialFood >= _unitsNeeded) {
+            // Look for food.
+            setDebugState("Searching in if case <potentialFood="+potentialFood+"> <unitsNeeded="+_unitsNeeded+"...");
             // Convert our raw foods
             // PLAN:
             // - If we have hay/wheat, make it into bread
@@ -218,7 +220,10 @@ public class CollectFoodTask extends Task {
                     return _smeltTask;
                 }
             }
+
         } else {
+            // Look for food.
+            setDebugState("Searching in else case <potentialFood="+potentialFood+"> <unitsNeeded="+_unitsNeeded+"...");
             // Pick up food items from ground
             for (Item item : ITEMS_TO_PICK_UP) {
                 Task t = this.pickupTaskOrNull(mod, item);
@@ -311,9 +316,6 @@ public class CollectFoodTask extends Task {
                 return _currentResourceTask;
             }
         }
-
-        // Look for food.
-        setDebugState("Searching...");
         return new TimeoutWanderTask();
     }
 

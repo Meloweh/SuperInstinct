@@ -181,7 +181,7 @@ public class SchematicBuildTask extends Task {
             if (mod.getItemStorage().bestSwordInInventory().isEmpty()) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SWORD));
             }
-            if (mod.getFoodChain().getAvailableFoodScore() < FOOD_UNITS) {
+            if (StorageHelper.calculateInventoryFoodScore(mod) < FOOD_UNITS) {
                 return new CollectFoodTask(FOOD_UNITS);
             }
             if (!CombatHelper.hasShield(mod)) {

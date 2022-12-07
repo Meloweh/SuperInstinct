@@ -167,9 +167,9 @@ public class FoodChain extends SingleTaskChain {
         return Float.NEGATIVE_INFINITY;
     }
 
-    public int getAvailableFoodScore() {
+    /*public int getAvailableFoodScore() {
         return _cachedFoodScore;
-    }
+    }*/
 
     @Override
     public boolean isActive() {
