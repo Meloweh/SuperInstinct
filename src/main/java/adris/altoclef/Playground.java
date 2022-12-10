@@ -1,6 +1,7 @@
 package adris.altoclef;
 
 import adris.altoclef.butler.WhisperChecker;
+import adris.altoclef.tasks.ArrowMapTests.LastAttackTestTask;
 import adris.altoclef.tasks.CraftGenericManuallyTask;
 import adris.altoclef.tasks.construction.PlaceBlockNearbyTask;
 import adris.altoclef.tasks.construction.PlaceSignTask;
@@ -209,6 +210,7 @@ public class Playground {
                 //mod.runUserTask(new EnterNetherPortalTask(new ConstructNetherPortalBucketTask(), Dimension.NETHER));
                 mod.runUserTask(new EnterNetherPortalTask(new ConstructNetherPortalObsidianTask(), WorldHelper.getCurrentDimension() == Dimension.OVERWORLD ? Dimension.NETHER : Dimension.OVERWORLD));
                 break;
+            case "skel": mod.runUserTask(new LastAttackTestTask()); break;
             case "kill":
                 List<ZombieEntity> zombs = mod.getEntityTracker().getTrackedEntities(ZombieEntity.class);
                 if (zombs.size() == 0) {

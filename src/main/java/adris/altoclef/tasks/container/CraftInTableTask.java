@@ -115,7 +115,7 @@ public class CraftInTableTask extends ResourceTask {
 
 class DoCraftInTableTask extends DoStuffInContainerTask {
 
-    private final float CRAFT_RESET_TIMER_BONUS_SECONDS = 10;
+    private final float CRAFT_RESET_TIMER_BONUS_SECONDS = 21;
 
     private final RecipeTarget[] _targets;
 

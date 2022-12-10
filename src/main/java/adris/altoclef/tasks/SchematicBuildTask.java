@@ -3,6 +3,7 @@ package adris.altoclef.tasks;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.TaskCatalogue;
+import adris.altoclef.chains.FoodChain;
 import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
 import adris.altoclef.tasks.misc.EquipArmorTask;
 import adris.altoclef.tasks.resources.CollectFoodTask;
@@ -50,6 +51,7 @@ public class SchematicBuildTask extends Task {
     private final TimerGame _clickTimer = new TimerGame(120);
     private final MovementProgressChecker _moveChecker = new MovementProgressChecker(4, 0.1, 4, 0.01);
     private Task walkAroundTask;
+    private boolean needFood = false;
 
     public SchematicBuildTask(final String schematicFileName) {
         this(schematicFileName, new BlockPos(MinecraftClient.getInstance().player.getPos()));
@@ -170,6 +172,25 @@ public class SchematicBuildTask extends Task {
         overrideMissing();
         this.sourced = false;
 
+        if (StorageHelper.calculateInventoryFoodScore(mod) < MIN_FOOD_UNITS) {
+            needFood = true;
+            builder.pause();
+            this.pause = true;
+        }
+        if (needFood && StorageHelper.calculateInventoryFoodScore(mod) < FOOD_UNITS) {
+            if (mod.getItemStorage().bestPickaxeInInventory().isEmpty()) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_PICKAXE));
+            }
+            if (mod.getItemStorage().bestSwordInInventory().isEmpty()) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SWORD));
+            }
+            return new CollectFoodTask(FOOD_UNITS);
+        } else if (needFood) {
+            needFood = false;
+            builder.resume();
+            this.pause = false;
+        }
+
         if (getMissing() != null && !getMissing().isEmpty() && (builder.isPaused() || !builder.isFromAltoclef()) || !builder.isActive()) {
             if (!mod.inAvoidance(this.bounds)) {
                 mod.setAvoidanceOf(this.bounds);
@@ -181,9 +202,11 @@ public class SchematicBuildTask extends Task {
             if (mod.getItemStorage().bestSwordInInventory().isEmpty()) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SWORD));
             }
-            if (StorageHelper.calculateInventoryFoodScore(mod) < FOOD_UNITS) {
+            /*if (needFood && StorageHelper.calculateInventoryFoodScore(mod) < FOOD_UNITS) {
                 return new CollectFoodTask(FOOD_UNITS);
-            }
+            } else {
+                needFood = false;
+            }*/
             if (!CombatHelper.hasShield(mod)) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.SHIELD));
             }
@@ -199,31 +222,6 @@ public class SchematicBuildTask extends Task {
             if (mod.getItemStorage().bestShovelInInventory().isEmpty()) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SHOVEL));
             }
-            /*if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_CHESTPLATE)) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_CHESTPLATE));
-            }
-            //TODO: isMinimumArmorEquipped
-            if (!StorageHelper.isArmorEquipped(mod, Items.IRON_CHESTPLATE)) {
-                return new EquipArmorTask(Items.IRON_CHESTPLATE);
-            }
-            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_HELMET)) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_HELMET));
-            }
-            if (!StorageHelper.isArmorEquipped(mod, Items.IRON_HELMET)) {
-                return new EquipArmorTask(Items.IRON_HELMET);
-            }
-            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_LEGGINGS)) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_LEGGINGS));
-            }
-            if (!StorageHelper.isArmorEquipped(mod, Items.IRON_LEGGINGS)) {
-                return new EquipArmorTask(Items.IRON_LEGGINGS);
-            }
-            if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isArmorEquipped(mod, Items.IRON_BOOTS)) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_BOOTS));
-            }
-            if (!StorageHelper.isArmorEquipped(mod, Items.IRON_BOOTS)) {
-                return new EquipArmorTask(Items.IRON_BOOTS);
-            }*/
             int requiredIron = 0;
             int currentIron = mod.getItemStorage().getItemCount(Items.IRON_INGOT);
             if (mod.getItemStorage().bestHelmetInInventory().isEmpty() && !StorageHelper.isHelmetEquipped(mod)) {
@@ -263,9 +261,11 @@ public class SchematicBuildTask extends Task {
             }
 
             if (requiredIron > 0 && currentIron < requiredIron) {
+                setDebugState("Sourcing " + requiredIron + " iron...");
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_INGOT, requiredIron));
             }
             for (final BlockState state : getTodoList(mod, missing)) {
+                setDebugState("Sourcing " + missing.get(state) + " " + state.getBlock().asItem().toString() + " as building material...");
                 return TaskCatalogue.getItemTask(state.getBlock().asItem(), missing.get(state));
             }
             this.sourced = true;

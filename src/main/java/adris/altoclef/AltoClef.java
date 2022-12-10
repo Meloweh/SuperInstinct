@@ -384,7 +384,7 @@ public class AltoClef implements ModInitializer {
     }
 
     public boolean inAvoidance(final CubeBounds bounds) {
-        return getBehaviour().inAvoidBlockBreaking(bounds.getPredicate());
+        return bounds != null && getBehaviour().inAvoidBlockBreaking(bounds.getPredicate());
     }
 
     /*

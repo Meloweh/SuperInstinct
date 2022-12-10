@@ -27,14 +27,17 @@ import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.*;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.entity.projectile.FireballEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.SwordItem;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
@@ -56,6 +59,7 @@ public class MobDefenseChain extends SingleTaskChain {
     private CustomBaritoneGoalTask _runAwayTask;
     private float _cachedLastPriority;
     private BasicDefenseManager basicDefenseManager = new BasicDefenseManager();
+    private boolean attacking = false;
 
     public MobDefenseChain(TaskRunner runner) {
         super(runner);
@@ -139,44 +143,17 @@ public class MobDefenseChain extends SingleTaskChain {
         // Pause if we're not loaded into a world.
         if (!AltoClef.inGame()) return Float.NEGATIVE_INFINITY;
 
-        // Put out fire if we're standing on one like an idiot
-        BlockPos fireBlock = isInsideFireAndOnFire(mod);
-        if (fireBlock != null) {
-            putOutFire(mod, fireBlock);
-            _wasPuttingOutFire = true;
-        } else {
-            // Stop putting stuff out if we no longer need to put out a fire.
-            mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, false);
-            _wasPuttingOutFire = false;
-        }
-
-        if (mod.getFoodChain().needsToEat() || mod.getMLGBucketChain().isFallingOhNo(mod) ||
-                !mod.getMLGBucketChain().doneMLG() || mod.getMLGBucketChain().isChorusFruiting()) {
-            _killAura.stopShielding(mod);
-            stopShielding(mod);
-            return Float.NEGATIVE_INFINITY;
-        }
-
-        // Force field
-        doForceField(mod);
-
-
-        // Tell baritone to avoid mobs if we're vulnurable.
-        // Costly.
-        //mod.getClientBaritoneSettings().avoidance.value = isVulnurable(mod);
-
-        // Run away if a weird mob is close by.
-        Optional<Entity> universallyDangerous = getUniversallyDangerousMob(mod);
-        if (universallyDangerous.isPresent()) {
-            _runAwayTask = new RunAwayFromHostilesTask(DANGER_KEEP_DISTANCE, true);
-            setTask(_runAwayTask);
-            return 70;
-        }
-
         _doingFunkyStuff = false;
         // Run away from creepers
         CreeperEntity blowingUp = getClosestFusingCreeper(mod);
         if (blowingUp != null) {
+            if (attacking) {
+                if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
+                    setTask(_runAwayTask);
+                    //return _cachedLastPriority;
+                }
+                attacking = false;
+            }
             if (!mod.getFoodChain().needsToEat() && (mod.getItemStorage().hasItem(Items.SHIELD) ||
                     mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
                     !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null &&
@@ -203,10 +180,51 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }
 
+        // Put out fire if we're standing on one like an idiot
+        BlockPos fireBlock = isInsideFireAndOnFire(mod);
+        if (fireBlock != null) {
+            putOutFire(mod, fireBlock);
+            _wasPuttingOutFire = true;
+        } else {
+            // Stop putting stuff out if we no longer need to put out a fire.
+            mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, false);
+            _wasPuttingOutFire = false;
+        }
+
+        if (mod.getPlayer().getHealth() > 9) {
+            if (mod.getFoodChain().needsToEat() || mod.getMLGBucketChain().isFallingOhNo(mod) ||
+                    !mod.getMLGBucketChain().doneMLG() || mod.getMLGBucketChain().isChorusFruiting()) {
+                _killAura.stopShielding(mod);
+                stopShielding(mod);
+                return Float.NEGATIVE_INFINITY;
+            }
+        }
+
+        doForceField(mod);
+
         basicDefenseManager.onTick(mod);
         if (basicDefenseManager.isWorking()) {
-            return 75;
+            if (attacking) {
+                if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
+                    setTask(_runAwayTask);
+                    //return _cachedLastPriority;
+                }
+                attacking = false;
+            }
+            return 70;
         }
+        // Tell baritone to avoid mobs if we're vulnurable.
+        // Costly.
+        //mod.getClientBaritoneSettings().avoidance.value = isVulnurable(mod);
+
+        // Run away if a weird mob is close by.
+        Optional<Entity> universallyDangerous = getUniversallyDangerousMob(mod);
+        if (universallyDangerous.isPresent()) {
+            _runAwayTask = new RunAwayFromHostilesTask(DANGER_KEEP_DISTANCE, true);
+            setTask(_runAwayTask);
+            return 70;
+        }
+
         // Block projectiles with shield
         /*if (!mod.getFoodChain().needsToEat() && mod.getModSettings().isDodgeProjectiles() && isProjectileClose(mod) &&
                 (mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
@@ -262,8 +280,8 @@ public class MobDefenseChain extends SingleTaskChain {
             // TODO: I don't think this lock is necessary at all.
             if (!hostiles.isEmpty()) {
                 for (Entity hostile : hostiles) {
-                    int annoyingRange = (hostile instanceof SkeletonEntity || hostile instanceof WitchEntity || hostile
-                            instanceof PillagerEntity || hostile instanceof PiglinEntity || hostile instanceof StrayEntity) ? 15 : 8;
+                    int annoyingRange = (/*hostile instanceof SkeletonEntity ||*/ hostile instanceof WitchEntity || hostile
+                            instanceof PillagerEntity || hostile instanceof PiglinEntity || hostile instanceof StrayEntity) ? 15 : 7;
                     boolean isClose = hostile.isInRange(mod.getPlayer(), annoyingRange);
 
                     if (isClose) {
@@ -318,27 +336,9 @@ public class MobDefenseChain extends SingleTaskChain {
                     numberOfProblematicEntities = 1;
                 }
             }
+
             if (numberOfProblematicEntities > 0) {
-
-                // Depending on our weapons/armor, we may chose to straight up kill hostiles if we're not dodging their arrows.
-
-                // wood 0 : 1 skeleton
-                // stone 1 : 1 skeleton
-                // iron 2 : 2 hostiles
-                // diamond 3 : 3 hostiles
-                // netherite 4 : 4 hostiles
-
-                // Armor: (do the math I'm not boutta calculate this)
-                // leather: ?1 skeleton
-                // iron: ?2 hostiles
-                // diamond: ?3 hostiles
-
-                // 7 is full set of leather
-                // 15 is full set of iron.
-                // 20 is full set of diamond.
-                // Diamond+netherite have bonus "toughness" parameter (we can simply add them I think, for now.)
-                // full diamond has 8 bonus toughness
-                // full netherite has 12 bonus toughness
+                //if (toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() < 1 || numberOfProblematicEntities == 1) {
                 int armor = mod.getPlayer().getArmor();
                 float damage = bestSword == null ? 0 : (1 + bestSword.getMaterial().getAttackDamage());
                 boolean hasShield = mod.getItemStorage().hasItem(Items.SHIELD) ||
@@ -346,9 +346,14 @@ public class MobDefenseChain extends SingleTaskChain {
                 int shield = hasShield ? 20 : 0;
                 int canDealWith = (int) Math.ceil((armor * 3.6 / 20.0) + (damage * 0.8) + (shield));
                 canDealWith += 1;
-                if (canDealWith > numberOfProblematicEntities) {
+                //if (canDealWith > 4) canDealWith = 4;
+                toDealWith.sort((a, b) -> (int)((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer())) * 1000));
+                if (canDealWith > numberOfProblematicEntities
+                        && toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() < 3
+                        && toDealWith.stream().filter(e -> e.distanceTo(mod.getPlayer()) < 6).count() < 3) {
                     // We can deal with it.
                     _runAwayTask = null;
+                    attacking = true;
                     setTask(new KillEntitiesTask(toDealWith.get(0).getClass()));
                     return 65;
                 } else {
@@ -357,8 +362,10 @@ public class MobDefenseChain extends SingleTaskChain {
                     setTask(_runAwayTask);
                     return 80;
                 }
+                //}
             }
         }
+
         // By default if we aren't "immediately" in danger but were running away, keep running away until we're good.
         if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
             setTask(_runAwayTask);
@@ -366,6 +373,14 @@ public class MobDefenseChain extends SingleTaskChain {
         } else {
             _runAwayTask = null;
         }
+
+        if (mod.getFoodChain().needsToEat() || mod.getMLGBucketChain().isFallingOhNo(mod) ||
+                !mod.getMLGBucketChain().doneMLG() || mod.getMLGBucketChain().isChorusFruiting()) {
+            _killAura.stopShielding(mod);
+            stopShielding(mod);
+            return Float.NEGATIVE_INFINITY;
+        }
+
         return 0;
     }
 

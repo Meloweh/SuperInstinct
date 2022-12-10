@@ -8,18 +8,19 @@ import baritone.api.utils.RotationUtils;
 import baritone.api.utils.input.Input;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.mob.SkeletonEntity;
 import net.minecraft.entity.projectile.ArrowEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BasicDefenseManager {
@@ -37,6 +38,7 @@ public class BasicDefenseManager {
     private Optional<List<TickableTraceInfo>> focus;
     private Optional<BlockPos> breakCandidate;
     private List<BlockPos> placeCandidates;
+    private Map<Entity, Integer> shootingTimeouts = new HashMap<>();
 
     public BasicDefenseManager() {
         this.manager = new ArrowThreadManager();
@@ -131,8 +133,8 @@ public class BasicDefenseManager {
         return null;
     }*/
 
-    private Task fill(final AltoClef mod) {
-        this.placeCandidates.forEach(pos -> {
+    private Task fill(final AltoClef mod, final List<BlockPos> candidates) {
+        candidates.forEach(pos -> {
             /*if (isFloor(mod, pos)) {
                 right_mouse(mod, false);
                 return null;
@@ -152,13 +154,13 @@ public class BasicDefenseManager {
 
     private Task placeSide(final AltoClef mod) {
         halt(mod);
-        return fill(mod);
+        return fill(mod, this.placeCandidates);
     }
 
     private Task placeBelow(final AltoClef mod) {
         haltMovement(mod);
         mod.getPlayer().jump();
-        return fill(mod);
+        return fill(mod, this.placeCandidates);
     }
 
     private boolean hasBlock(final AltoClef mod) {
@@ -487,6 +489,43 @@ public class BasicDefenseManager {
         throw new IllegalStateException("what? how?");
     }
 
+    private void alt(final AltoClef mod) {
+        if (!hasBlock(mod)) return;
+        //shootingTimeouts.removeIf(e -> e == null || !e.isAlive() || e.isRegionUnloaded() || e.distanceTo(mod.getPlayer()) > 20);
+        final List<SkeletonEntity> toDealWith = mod.getEntityTracker().getTrackedEntities(SkeletonEntity.class);
+        for (final Entity e : toDealWith) {
+            if (e instanceof SkeletonEntity) {
+                final SkeletonEntity s = (SkeletonEntity) e;
+                if (s.isAttacking()) {
+                    if (!shootingTimeouts.containsKey(e)) {
+                        shootingTimeouts.put(e, 0);
+                    } else {
+                        shootingTimeouts.keySet().forEach(k -> shootingTimeouts.put(k, shootingTimeouts.get(k)+1));
+                    }
+                }
+            }
+        }
+        final List<ArrowEntity> proj = mod.getEntityTracker().getTrackedEntities(ArrowEntity.class);
+        proj.removeIf(e -> e.horizontalCollision || e.verticalCollision || e.getOwner() == null);
+        for (Entity e : shootingTimeouts.keySet()) {
+            if (e == null || !e.isAlive() || e.isRegionUnloaded() || e.distanceTo(mod.getPlayer()) > 20) {
+                shootingTimeouts.remove(e);
+            } else if (shootingTimeouts.get(e) >= 15) {
+                if (proj.stream().filter(f -> f.getOwner().equals(e)).count() > 0) {
+                    shootingTimeouts.put(e, 0);
+                } else {
+                    if (!isWorking()) {
+                        final BlockHitResult bhr = LookHelper.raycast(mod.getPlayer(), e.getEyePos(), 2);
+                        final List<BlockPos> l = new LinkedList<>();
+                        l.add(bhr.getBlockPos());
+                        fill(mod, l);
+                    }
+                    shootingTimeouts.put(e, 0);
+                }
+            }
+        }
+    }
+
     public void onTick(AltoClef mod) {
         manager.tick(mod);
         final Iterator<List<TickableTraceInfo>> hitIterator = manager.getIterator();
@@ -540,7 +579,7 @@ public class BasicDefenseManager {
             System.out.println("isFloorThickUnderPlayer: " + isFloorThickUnderPlayer);
             System.out.println("canBreakFloor: " + canBreakFloor);
 
-            if (allFromSameSide && (isShieldStrategy || hasEnoughShieldingTime)) {
+            if (allFromSameSide && (isShieldStrategy || hasEnoughShieldingTime) && CombatHelper.hasShield(mod)) {
                 this.strategy = Strategy.SHIELD;
             } else if (allFromSameSide && isBlockInInv/* && isSideFloored*/) {
                 if (this.placeCandidates.isEmpty()) {
@@ -589,6 +628,8 @@ public class BasicDefenseManager {
             case DIG: dig(mod); break;
             case JUMP: jump(mod); break;
         }
+
+        //alt(mod);
         //return null;
     }
 

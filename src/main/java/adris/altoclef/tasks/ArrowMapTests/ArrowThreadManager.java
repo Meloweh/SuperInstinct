@@ -130,6 +130,7 @@ public class ArrowThreadManager {
 
                 final Vec3d newTarget = YawHelper.yawToVec(mod.getPlayer().getYaw()).multiply(CSAlgorithm.DIST).add(mod.getPlayer().getPos());
                 try {
+                    //FIXME: jiggly baritone camera provokes imprecise tracings
                     paramQueue.put(new TracerParams(arrow, mod.getPlayer().getBoundingBox(), mod.getPlayer().getVelocity(), mod.getPlayer().getPos(), newTarget, mod.getWorld(), SimMovementState.UNDEFINED));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);

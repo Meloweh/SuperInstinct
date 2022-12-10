@@ -19,7 +19,7 @@ public class CombatHelper {
     private static boolean IS_HOLDING_SHIELD = false;
 
     public static boolean hasShield(final AltoClef mod) {
-        return mod.getItemStorage().hasItem(new ItemTarget(Items.SHIELD));
+        return mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD);
     }
 
     public static boolean isShieldEquipped() {

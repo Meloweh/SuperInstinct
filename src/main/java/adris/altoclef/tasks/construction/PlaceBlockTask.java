@@ -118,6 +118,9 @@ public class PlaceBlockTask extends Task implements ITaskRequiresGrounded {
             if (!mod.getClientBaritone().getBuilderProcess().isActive()) {
                 Debug.logInternal("Run Structure Build");
                 ISchematic schematic = new PlaceStructureSchematic(mod);
+                /*if (mod.getClientBaritone().getBuilderProcess().isFromAltoclef() && mod.getClientBaritone().getBuilderProcess().isPaused()) {
+
+                }*/
                 mod.getClientBaritone().getBuilderProcess().build("structure", schematic, _target);
             }
         }
