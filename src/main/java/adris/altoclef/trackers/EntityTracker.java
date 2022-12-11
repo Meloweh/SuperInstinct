@@ -14,7 +14,10 @@ import adris.altoclef.util.helpers.WorldHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.SkeletonEntity;
+import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.FishingBobberEntity;
 import net.minecraft.entity.projectile.PersistentProjectileEntity;
@@ -48,6 +51,7 @@ public class EntityTracker extends Tracker {
 
     private final HashMap<PlayerEntity, List<Entity>> _entitiesCollidingWithPlayerAccumulator = new HashMap<>();
     private final HashMap<PlayerEntity, HashSet<Entity>> _entitiesCollidingWithPlayer = new HashMap<>();
+    private final Map<Entity, Integer> entityAttackTimeouts = new HashMap<>();
 
     public EntityTracker(TrackerManager manager) {
         super(manager);
@@ -349,6 +353,22 @@ public class EntityTracker extends Tracker {
                     _entityMap.put(type, new ArrayList<>());
                 }
                 _entityMap.get(type).add(entity);
+
+                /*
+                if (entityAttackTimeouts.keySet().contains(entity)) {
+                    final int t = entityAttackTimeouts.get(entity);
+                    entityAttackTimeouts.put(entity, t > 0 ? t-1 : t);
+                } else if (entity instanceof HostileEntity) {
+
+                    final int cooldown = 20;
+
+                    entityAttackTimeouts.put(entity, cooldown);
+                }
+                for (final Entity e : entityAttackTimeouts.keySet()) {
+                    if (e == null || !e.isAlive() || e.isRegionUnloaded()) {
+                        entityAttackTimeouts.remove(entity);
+                    }
+                }*/
 
                 if (_mod.getControllerExtras().inRange(entity)) {
                     _closeEntities.add(entity);

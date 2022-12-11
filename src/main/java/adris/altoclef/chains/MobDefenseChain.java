@@ -4,6 +4,8 @@ import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.control.KillAura;
 import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
+import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
+import adris.altoclef.tasks.SecurityShelterTask;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
 import adris.altoclef.tasks.movement.CustomBaritoneGoalTask;
 import adris.altoclef.tasks.movement.DodgeProjectilesTask;
@@ -60,6 +62,8 @@ public class MobDefenseChain extends SingleTaskChain {
     private float _cachedLastPriority;
     private BasicDefenseManager basicDefenseManager = new BasicDefenseManager();
     private boolean attacking = false;
+    private static boolean safeToEat = false;
+    private Optional<SecurityShelterTask> optShelterTask = Optional.empty();
 
     public MobDefenseChain(TaskRunner runner) {
         super(runner);
@@ -72,6 +76,10 @@ public class MobDefenseChain extends SingleTaskChain {
         // Not fusing.
         if (fuse <= 0.001f) return distance;
         return distance * 0.2; // less is WORSE
+    }
+
+    public static boolean safeToEat() {
+        return safeToEat;
     }
 
     @Override
@@ -149,6 +157,7 @@ public class MobDefenseChain extends SingleTaskChain {
         if (blowingUp != null) {
             if (attacking) {
                 if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
+                    _runAwayTask = new RunAwayFromCreepersTask(CREEPER_KEEP_DISTANCE);
                     setTask(_runAwayTask);
                     //return _cachedLastPriority;
                 }
@@ -162,6 +171,7 @@ public class MobDefenseChain extends SingleTaskChain {
                 mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
                 LookHelper.lookAt(mod, blowingUp.getEyePos());
                 ItemStack shieldSlot = StorageHelper.getItemStackInSlot(PlayerSlot.OFFHAND_SLOT);
+                safeToEat = false;
                 if (shieldSlot.getItem() != Items.SHIELD) {
                     mod.getSlotHandler().forceEquipItemToOffhand(Items.SHIELD);
                 } else {
@@ -172,12 +182,107 @@ public class MobDefenseChain extends SingleTaskChain {
                 //Debug.logMessage("RUNNING AWAY!");
                 _runAwayTask = new RunAwayFromCreepersTask(CREEPER_KEEP_DISTANCE);
                 setTask(_runAwayTask);
-                return 50 + blowingUp.getClientFuseTime(1) * 50;
+                safeToEat = false;
+                return 70 + blowingUp.getClientFuseTime(1) * 50;
             }
         } else {
             if (!isProjectileClose(mod)) {
                 stopShielding(mod);
             }
+        }
+
+
+        final List<Entity> hostiles = mod.getEntityTracker().getHostiles();
+        List<Entity> toDealWith = new ArrayList<>();
+        //if (toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() < 1 || numberOfProblematicEntities == 1) {
+        SwordItem bestSword = null;
+        Item[] SWORDS = new Item[]{Items.NETHERITE_SWORD, Items.DIAMOND_SWORD, Items.IRON_SWORD, Items.GOLDEN_SWORD,
+                Items.STONE_SWORD, Items.WOODEN_SWORD};
+        for (Item item : SWORDS) {
+            if (mod.getItemStorage().hasItem(item)) {
+                bestSword = (SwordItem) item;
+            }
+        }
+        int armor = mod.getPlayer().getArmor();
+        float damage = bestSword == null ? 0 : (1 + bestSword.getMaterial().getAttackDamage());
+        boolean hasShield = mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD);
+        int shield = hasShield ? 20 : 0;
+        int canDealWith = (int) Math.ceil((armor * 3.6 / 20.0) + (damage * 0.8) + (shield)) + 1;
+        toDealWith.sort((a, b) -> (int)((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer())) * 1000));
+        final long projectileMobCount = toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() + toDealWith.stream().filter(e -> e instanceof PillagerEntity).count();
+        final long closeDangerCount = toDealWith.stream().filter(e -> e.distanceTo(mod.getPlayer()) < 6).count();
+        final boolean preppedForMultiProjectileEnemies = CombatHelper.hasShield(mod) ? projectileMobCount < 3 : projectileMobCount < 2;
+        if (!hostiles.isEmpty()) {
+            for (Entity hostile : hostiles) {
+                int annoyingRange = (/*hostile instanceof SkeletonEntity ||*/ hostile instanceof WitchEntity || hostile
+                        instanceof PillagerEntity || hostile instanceof PiglinEntity || hostile instanceof StrayEntity) ? 15 : 7;
+                boolean isClose = hostile.isInRange(mod.getPlayer(), annoyingRange);
+
+                if (isClose) {
+                    isClose = LookHelper.seesPlayer(hostile, mod.getPlayer(), annoyingRange);
+                }
+
+                // Give each hostile a timer, if they're close for too long deal with them.
+                if (isClose) {
+                    if (!_closeAnnoyingEntities.containsKey(hostile)) {
+                        boolean wardenAttacking = hostile instanceof WardenEntity;
+                        boolean witherAttacking = hostile instanceof WitherEntity;
+                        boolean endermanAttacking = hostile instanceof EndermanEntity;
+                        boolean blazeAttacking = hostile instanceof BlazeEntity;
+                        boolean witherSkeletonAttacking = hostile instanceof WitherSkeletonEntity;
+                        boolean hoglinAttacking = hostile instanceof HoglinEntity;
+                        boolean zoglinAttacking = hostile instanceof ZoglinEntity;
+                        boolean piglinBruteAttacking = hostile instanceof PiglinBruteEntity;
+                        if (blazeAttacking || witherSkeletonAttacking || hoglinAttacking || zoglinAttacking ||
+                                piglinBruteAttacking || endermanAttacking || witherAttacking || wardenAttacking) {
+                            if (mod.getPlayer().getHealth() <= 10) {
+                                _closeAnnoyingEntities.put(hostile, new TimerGame(0));
+                            } else {
+                                _closeAnnoyingEntities.put(hostile, new TimerGame(Float.POSITIVE_INFINITY));
+                            }
+                        } else {
+                            _closeAnnoyingEntities.put(hostile, new TimerGame(0));
+                        }
+                        _closeAnnoyingEntities.get(hostile).reset();
+                    }
+                    if (_closeAnnoyingEntities.get(hostile).elapsed()) {
+                        toDealWith.add(hostile);
+                    }
+                } else {
+                    _closeAnnoyingEntities.remove(hostile);
+                }
+            }
+        }
+
+        // Clear dead/non existing hostiles
+        List<Entity> toRemove = new ArrayList<>();
+        for (Entity check : _closeAnnoyingEntities.keySet()) {
+            if (!check.isAlive()) {
+                toRemove.add(check);
+            }
+        }
+        for (Entity remove : toRemove) _closeAnnoyingEntities.remove(remove);
+
+        int numberOfProblematicEntities = toDealWith.size();
+        if (!toDealWith.isEmpty()) {
+            if (toDealWith.get(0).getClass() == SlimeEntity.class || toDealWith.get(0).getClass() ==
+                    MagmaCubeEntity.class) {
+                numberOfProblematicEntities = 1;
+            }
+        }
+
+        safeToEat = numberOfProblematicEntities < 1 || numberOfProblematicEntities < 2 && mod.getPlayer().getHealth() >= 14;
+
+        if (mod.getPlayer().getHealth() <= 8 && mod.getItemStorage().getBlockTypes().size() >= SecurityShelterTask.minimumBlockCount(mod) && numberOfProblematicEntities > 2) {
+            safeToEat = false;
+            if (optShelterTask.isPresent() && optShelterTask.get().isFinished(mod)) {
+                optShelterTask.get().reset();
+            }
+            if (optShelterTask.isEmpty()) {
+                optShelterTask = Optional.of(new SecurityShelterTask());
+            }
+            setTask(optShelterTask.get());
+            return 70;
         }
 
         // Put out fire if we're standing on one like an idiot
@@ -204,14 +309,14 @@ public class MobDefenseChain extends SingleTaskChain {
 
         basicDefenseManager.onTick(mod);
         if (basicDefenseManager.isWorking()) {
-            if (attacking) {
+            /*if (attacking) {
                 if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
                     setTask(_runAwayTask);
                     //return _cachedLastPriority;
                 }
                 attacking = false;
-            }
-            return 70;
+            }*/
+            return 70 + 5 * basicDefenseManager.cost();
         }
         // Tell baritone to avoid mobs if we're vulnurable.
         // Costly.
@@ -261,96 +366,11 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }
 
+        // Deal with hostiles because they are annoying.
+        // TODO: I don't think this lock is necessary at all.
         if (mod.getModSettings().shouldDealWithAnnoyingHostiles()) {
-            // Deal with hostiles because they are annoying.
-            List<Entity> hostiles = mod.getEntityTracker().getHostiles();
-            // TODO: I don't think this lock is necessary at all.
-
-            SwordItem bestSword = null;
-            Item[] SWORDS = new Item[]{Items.NETHERITE_SWORD, Items.DIAMOND_SWORD, Items.IRON_SWORD, Items.GOLDEN_SWORD,
-                    Items.STONE_SWORD, Items.WOODEN_SWORD};
-            for (Item item : SWORDS) {
-                if (mod.getItemStorage().hasItem(item)) {
-                    bestSword = (SwordItem) item;
-                }
-            }
-
-            List<Entity> toDealWith = new ArrayList<>();
-
-            // TODO: I don't think this lock is necessary at all.
-            if (!hostiles.isEmpty()) {
-                for (Entity hostile : hostiles) {
-                    int annoyingRange = (/*hostile instanceof SkeletonEntity ||*/ hostile instanceof WitchEntity || hostile
-                            instanceof PillagerEntity || hostile instanceof PiglinEntity || hostile instanceof StrayEntity) ? 15 : 7;
-                    boolean isClose = hostile.isInRange(mod.getPlayer(), annoyingRange);
-
-                    if (isClose) {
-                        isClose = LookHelper.seesPlayer(hostile, mod.getPlayer(), annoyingRange);
-                    }
-
-                    // Give each hostile a timer, if they're close for too long deal with them.
-                    if (isClose) {
-                        if (!_closeAnnoyingEntities.containsKey(hostile)) {
-                            boolean wardenAttacking = hostile instanceof WardenEntity;
-                            boolean witherAttacking = hostile instanceof WitherEntity;
-                            boolean endermanAttacking = hostile instanceof EndermanEntity;
-                            boolean blazeAttacking = hostile instanceof BlazeEntity;
-                            boolean witherSkeletonAttacking = hostile instanceof WitherSkeletonEntity;
-                            boolean hoglinAttacking = hostile instanceof HoglinEntity;
-                            boolean zoglinAttacking = hostile instanceof ZoglinEntity;
-                            boolean piglinBruteAttacking = hostile instanceof PiglinBruteEntity;
-                            if (blazeAttacking || witherSkeletonAttacking || hoglinAttacking || zoglinAttacking ||
-                                    piglinBruteAttacking || endermanAttacking || witherAttacking || wardenAttacking) {
-                                if (mod.getPlayer().getHealth() <= 10) {
-                                    _closeAnnoyingEntities.put(hostile, new TimerGame(0));
-                                } else {
-                                    _closeAnnoyingEntities.put(hostile, new TimerGame(Float.POSITIVE_INFINITY));
-                                }
-                            } else {
-                                _closeAnnoyingEntities.put(hostile, new TimerGame(0));
-                            }
-                            _closeAnnoyingEntities.get(hostile).reset();
-                        }
-                        if (_closeAnnoyingEntities.get(hostile).elapsed()) {
-                            toDealWith.add(hostile);
-                        }
-                    } else {
-                        _closeAnnoyingEntities.remove(hostile);
-                    }
-                }
-            }
-
-            // Clear dead/non existing hostiles
-            List<Entity> toRemove = new ArrayList<>();
-            for (Entity check : _closeAnnoyingEntities.keySet()) {
-                if (!check.isAlive()) {
-                    toRemove.add(check);
-                }
-            }
-            for (Entity remove : toRemove) _closeAnnoyingEntities.remove(remove);
-
-            int numberOfProblematicEntities = toDealWith.size();
-            if (!toDealWith.isEmpty()) {
-                if (toDealWith.get(0).getClass() == SlimeEntity.class || toDealWith.get(0).getClass() ==
-                        MagmaCubeEntity.class) {
-                    numberOfProblematicEntities = 1;
-                }
-            }
-
             if (numberOfProblematicEntities > 0) {
-                //if (toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() < 1 || numberOfProblematicEntities == 1) {
-                int armor = mod.getPlayer().getArmor();
-                float damage = bestSword == null ? 0 : (1 + bestSword.getMaterial().getAttackDamage());
-                boolean hasShield = mod.getItemStorage().hasItem(Items.SHIELD) ||
-                        mod.getItemStorage().hasItemInOffhand(Items.SHIELD);
-                int shield = hasShield ? 20 : 0;
-                int canDealWith = (int) Math.ceil((armor * 3.6 / 20.0) + (damage * 0.8) + (shield));
-                canDealWith += 1;
-                //if (canDealWith > 4) canDealWith = 4;
-                toDealWith.sort((a, b) -> (int)((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer())) * 1000));
-                if (canDealWith > numberOfProblematicEntities
-                        && toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() < 3
-                        && toDealWith.stream().filter(e -> e.distanceTo(mod.getPlayer()) < 6).count() < 3) {
+                if (canDealWith > numberOfProblematicEntities && preppedForMultiProjectileEnemies && closeDangerCount <= 3) {
                     // We can deal with it.
                     _runAwayTask = null;
                     attacking = true;

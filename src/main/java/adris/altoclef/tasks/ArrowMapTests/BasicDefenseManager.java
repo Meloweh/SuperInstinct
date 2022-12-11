@@ -58,7 +58,7 @@ public class BasicDefenseManager {
         mod.getPlayer().setPitch(targetRotation.getPitch());
     }
 
-    private void lookOnTopTarget(final AltoClef mod, final BlockPos target) {
+    public static void lookOnTopTarget(final AltoClef mod, final BlockPos target) {
         //mod.getPlayer().setPitch(-85);
         //LookHelper.lookAt(mod, target, Direction.UP);
         lookAt(mod, target, Direction.UP);
@@ -106,6 +106,12 @@ public class BasicDefenseManager {
         return manager.getIterator().hasNext();
     }
 
+    public int cost() {
+        if (!isWorking()) return 0;
+        final TickableTraceInfo info = manager.getIterator().next().get(0);
+        return info.getTick();
+    }
+
     private void right_mouse(final AltoClef mod, final boolean press) {
         if (press && !mod.getClientBaritone().getInputOverrideHandler().isInputForcedDown(Input.CLICK_RIGHT)) {
             mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.CLICK_RIGHT, true);
@@ -133,21 +139,20 @@ public class BasicDefenseManager {
         return null;
     }*/
 
-    private Task fill(final AltoClef mod, final List<BlockPos> candidates) {
-        candidates.forEach(pos -> {
-            /*if (isFloor(mod, pos)) {
-                right_mouse(mod, false);
-                return null;
-            }*/
+    public static void fill(final AltoClef mod, final BlockPos pos) {
+        if (!mod.getSlotHandler().equipBlock()) {
+            throw new IllegalStateException("Blocks should be present at this point."); //FIXME: bei der Entscheidung wird nur nach 1 Block im inv gefragt, aber wir setzen hier potentiell mehr
+        }
+        lookOnTopTarget(mod, pos.down());
+        //right_mouse(mod, true);
+        if (MeteorClientPlace.canPlace(pos)) {
+            MeteorClientPlace.place(pos, Hand.MAIN_HAND, MinecraftClient.getInstance().player.getInventory().selectedSlot, true, true);
+        }
+    }
 
-            if (!mod.getSlotHandler().equipBlock()) {
-                throw new IllegalStateException("Blocks should be present at this point."); //FIXME: bei der Entscheidung wird nur nach 1 Block im inv gefragt, aber wir setzen hier potentiell mehr
-            }
-            lookOnTopTarget(mod, pos.down());
-            //right_mouse(mod, true);
-            if (MeteorClientPlace.canPlace(pos)) {
-                MeteorClientPlace.place(pos, Hand.MAIN_HAND, MinecraftClient.getInstance().player.getInventory().selectedSlot, true, true);
-            }
+    public static Task fill(final AltoClef mod, final List<BlockPos> candidates) {
+        candidates.forEach(pos -> {
+            fill(mod, pos);
         });
         return null;
     }

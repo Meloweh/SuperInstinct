@@ -12,6 +12,7 @@ import adris.altoclef.trackers.storage.ItemStorageTracker;
 import adris.altoclef.util.CubeBounds;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.helpers.StorageHelper;
+import adris.altoclef.util.progresscheck.DistanceProgressChecker;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
 import adris.altoclef.util.time.TimerGame;
 import baritone.api.schematic.ISchematic;
@@ -48,10 +49,11 @@ public class SchematicBuildTask extends Task {
     private ISchematic schematic;
     private static final int FOOD_UNITS = 80;
     private static final int MIN_FOOD_UNITS = 10;
-    private final TimerGame _clickTimer = new TimerGame(120);
+    private final TimerGame _clickTimer = new TimerGame(60);
     private final MovementProgressChecker _moveChecker = new MovementProgressChecker(4, 0.1, 4, 0.01);
     private Task walkAroundTask;
     private boolean needFood = false;
+    final DistanceProgressChecker buildChecker = new DistanceProgressChecker(60, 3, false);
 
     public SchematicBuildTask(final String schematicFileName) {
         this(schematicFileName, new BlockPos(MinecraftClient.getInstance().player.getPos()));
@@ -121,6 +123,7 @@ public class SchematicBuildTask extends Task {
 
         _moveChecker.reset();
         _clickTimer.reset();
+        buildChecker.reset();
     }
 
     private List<BlockState> getTodoList(final AltoClef mod, final Map<BlockState, Integer> missing) {
@@ -184,6 +187,9 @@ public class SchematicBuildTask extends Task {
             if (mod.getItemStorage().bestSwordInInventory().isEmpty()) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SWORD));
             }
+            if (!CombatHelper.hasShield(mod)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.SHIELD));
+            }
             return new CollectFoodTask(FOOD_UNITS);
         } else if (needFood) {
             needFood = false;
@@ -196,7 +202,7 @@ public class SchematicBuildTask extends Task {
                 mod.setAvoidanceOf(this.bounds);
             }
             //if (mod.getFoodChain().hasFood() < MIN_FOOD_UNITS) {
-            if (mod.getItemStorage().bestPickaxeInInventory().isEmpty()) {
+            if (mod.getItemStorage().bestPickaxeInInventory().isEmpty() || mod.getItemStorage().bestPickaxeInInventory().equals(Items.WOODEN_PICKAXE)) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_PICKAXE));
             }
             if (mod.getItemStorage().bestSwordInInventory().isEmpty()) {
@@ -209,6 +215,9 @@ public class SchematicBuildTask extends Task {
             }*/
             if (!CombatHelper.hasShield(mod)) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.SHIELD));
+            }
+            if (mod.getItemStorage().bestSwordInInventory().get().equals(Items.WATER_BUCKET)) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.WATER_BUCKET));
             }
             if (mod.getItemStorage().bestSwordInInventory().get().equals(Items.STONE_SWORD)) {
                 return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_SWORD));
@@ -273,7 +282,7 @@ public class SchematicBuildTask extends Task {
 
         mod.unsetAvoidanceOf(this.bounds);
 
-        if (this.sourced == true && !builder.isActive()) {
+        if (this.sourced && !builder.isActive()) {
             if (mod.inAvoidance(this.bounds)) {
                 mod.unsetAvoidanceOf(this.bounds);
             }
@@ -283,7 +292,7 @@ public class SchematicBuildTask extends Task {
             //System.out.println("Resuming builder...");
         }
 
-        if (_moveChecker.check(mod)) {
+        /*if (_moveChecker.check(mod)) {
             _clickTimer.reset();
         }
         if (walkAroundTask == null) {
@@ -298,6 +307,26 @@ public class SchematicBuildTask extends Task {
             builder.popStack();
             _clickTimer.reset();
             _moveChecker.reset();
+        }*/
+
+        buildChecker.setProgress(mod.getPlayer().getPos());
+        if (buildChecker.failed()) {
+            if (walkAroundTask == null) {
+                Debug.logMessage("Timer elapsed.");
+                walkAroundTask = new RandomRadiusGoalTask(mod.getPlayer().getBlockPos(), 5d).next(mod.getPlayer().getBlockPos());
+            }
+        }
+
+        if (walkAroundTask != null) {
+            if (!walkAroundTask.isFinished(mod)) {
+                return walkAroundTask;
+            } else {
+                walkAroundTask = null;
+                builder.popStack();
+                _clickTimer.reset();
+                _moveChecker.reset();
+                buildChecker.reset();
+            }
         }
 
         return null;

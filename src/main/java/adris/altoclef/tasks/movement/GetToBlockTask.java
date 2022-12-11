@@ -5,6 +5,7 @@ import adris.altoclef.tasksystem.ITaskRequiresGrounded;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.helpers.WorldHelper;
+import adris.altoclef.util.progresscheck.MovementProgressChecker;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalBlock;
 import net.minecraft.util.math.BlockPos;
@@ -14,6 +15,7 @@ public class GetToBlockTask extends CustomBaritoneGoalTask implements ITaskRequi
     private final BlockPos _position;
     private final boolean _preferStairs;
     private final Dimension _dimension;
+    private final MovementProgressChecker progressChecker;
 
     public GetToBlockTask(BlockPos position, boolean preferStairs) {
         this(position, preferStairs, null);
@@ -27,6 +29,8 @@ public class GetToBlockTask extends CustomBaritoneGoalTask implements ITaskRequi
         _dimension = dimension;
         _position = position;
         _preferStairs = preferStairs;
+        //double distanceTimeout, double minDistance, double mineTimeout, double minMineProgress
+        this.progressChecker = new MovementProgressChecker(120, 3, 120, 0);
     }
 
     public GetToBlockTask(BlockPos position) {
@@ -35,6 +39,9 @@ public class GetToBlockTask extends CustomBaritoneGoalTask implements ITaskRequi
 
     @Override
     protected Task onTick(AltoClef mod) {
+        /*if(!this.progressChecker.check(mod)) {
+
+        }*/
         if (_dimension != null && WorldHelper.getCurrentDimension() != _dimension) {
             return new DefaultGoToDimensionTask(_dimension);
         }

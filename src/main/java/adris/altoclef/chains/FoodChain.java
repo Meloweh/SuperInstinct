@@ -136,7 +136,7 @@ public class FoodChain extends SingleTaskChain {
         if (!hasFood) {
             _requestFillup = false;
         }
-        if (hasFood && (needsToEat() || _requestFillup) && _cachedPerfectFood.isPresent() &&
+        if (hasFood && (needsToEat() || _requestFillup) && MobDefenseChain.safeToEat() && _cachedPerfectFood.isPresent() &&
                 !mod.getMLGBucketChain().isChorusFruiting() && !mod.getPlayer().isBlocking() &&
                 mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
             Item toUse = _cachedPerfectFood.get();
@@ -144,6 +144,7 @@ public class FoodChain extends SingleTaskChain {
             if (!LookHelper.tryAvoidingInteractable(mod)) {
                 return Float.NEGATIVE_INFINITY;
             }
+            //System.out.println("eating");
             startEat(mod, toUse);
         } else {
             stopEat(mod);

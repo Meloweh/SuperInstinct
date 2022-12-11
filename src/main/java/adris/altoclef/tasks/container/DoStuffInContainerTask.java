@@ -133,10 +133,10 @@ public abstract class DoStuffInContainerTask extends Task {
         // Walk to it and open it
 
         // Wait for food
-        if (mod.getFoodChain().needsToEat()) {
+        /*if (mod.getFoodChain().needsToEat()) {
             setDebugState("Waiting for eating...");
             return null;
-        }
+        }*/
         setDebugState("Walking to container... " + nearest.get().toShortString());
 
         if (!StorageHelper.getItemStackInCursorSlot().isEmpty()) {
