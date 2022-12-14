@@ -32,17 +32,27 @@ import adris.altoclef.util.*;
 import adris.altoclef.util.helpers.WorldHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.resource.Resource;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.chunk.EmptyChunk;
+import org.apache.commons.io.IOUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.*;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Scanner;
 
@@ -190,6 +200,86 @@ public class Playground {
                 break;
             case "outer":
                 mod.runUserTask(new GetToOuterEndIslandsTask());
+                break;
+            case "ingr1":
+                System.out.println(mod.getItemStorage().isFullyCapableToCraft(mod, Items.IRON_CHESTPLATE));
+                break;
+            case "res":
+                System.out.println("start res:");
+                /*MinecraftClient.getInstance().getResourceManager().getAllNamespaces().forEach(e -> {
+                    System.out.println("res: " + e);
+                });
+                Identifier identifier = new Identifier("minecraft:crafting_shaped");
+                try {
+                    MinecraftClient.getInstance().getResourceManager().getResourceOrThrow(identifier);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }*/
+/*
+                InputStream stream = e.getInputStream();
+                System.out.println("resource: ");
+                StringBuilder textBuilder = new StringBuilder();
+                try (Reader reader = new BufferedReader(new InputStreamReader
+                        (stream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+                    int c = 0;
+                    while ((c = reader.read()) != -1) {
+                        textBuilder.append((char) c);
+                    }
+                }
+                System.out.println(textBuilder.toString());*/
+                /*JSONParser jsonParser = new JSONParser();
+
+                try (FileReader reader = new FileReader("resources/yellow_wool.json"))
+                {
+                    //Read JSON file
+                    Object obj = null;
+                    try {
+                        obj = jsonParser.parse(reader);
+                    } catch (ParseException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    JSONArray employeeList = (JSONArray) obj;
+                    System.out.println(employeeList);
+
+                    //Iterate over employee array
+                    //employeeList.forEach( emp -> parseEmployeeObject( (JSONObject) emp ) );
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }*/
+
+                String inputFilePath = "recipes/yellow_wool.json" ;
+                ClassLoader classLoader = Playground.class.getClassLoader();
+                URL resource = classLoader.getResource(inputFilePath);
+                // File path is passed as parameter
+                File f2 = new File(resource.getFile());
+                if (f2.exists()){
+                    InputStream is;
+                    try {
+                        is = new FileInputStream(f2);
+                        String jsonTxt = IOUtils.toString(is, "UTF-8");
+                        System.out.println(jsonTxt);
+                        //JSONObject json = new JSONObject(jsonTxt);
+                        //String a = json.getString("1000");
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    //System.out.println(a);
+                }
+                System.out.println("end res:");
+
+                break;
+            case "ingr2":
+                System.out.println(mod.getItemStorage().isFullyCapableToCraft(mod, Items.BREAD));
+                break;
+            case "ingr3":
+                System.out.println(mod.getItemStorage().isFullyCapableToCraft(mod, Items.GOLDEN_AXE));
                 break;
             case "smelt":
                 ItemTarget target = new ItemTarget("iron_ingot", 4);

@@ -27,6 +27,8 @@ import baritone.altoclef.AltoClefSettings;
 import baritone.api.BaritoneAPI;
 import baritone.api.Settings;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -35,12 +37,16 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.resource.Resource;
+import net.minecraft.resource.ResourceManager;
+import net.minecraft.resource.ResourceType;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Queue;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
@@ -80,6 +86,8 @@ public class AltoClef implements ModInitializer {
     // Butler
     private Butler _butler;
 
+
+
     // Are we in game (playing in a server/world)
     public static boolean inGame() {
         return MinecraftClient.getInstance().player != null && MinecraftClient.getInstance().getNetworkHandler() != null;
@@ -103,6 +111,51 @@ public class AltoClef implements ModInitializer {
     public void onInitializeLoad() {
         // This code should be run after Minecraft loads everything else in.
         // This is the actual start point, controlled by a mixin.
+
+        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
+            @Override
+            public Identifier getFabricId() {
+                return new Identifier("altoclef", "recipes");
+            }
+            @Override
+            public void reload(ResourceManager manager) {
+                Map<Identifier, Resource> map = manager.findResources("recipes", path -> path.toString().contains(".json"));
+
+                map.values().forEach(e -> {
+                    try {
+                        InputStream stream = e.getInputStream();
+                        System.out.println("resource: ");
+                        StringBuilder textBuilder = new StringBuilder();
+                        try (Reader reader = new BufferedReader(new InputStreamReader
+                                (stream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+                            int c = 0;
+                            while ((c = reader.read()) != -1) {
+                                textBuilder.append((char) c);
+                            }
+                        }
+                        System.out.println(textBuilder.toString());
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+
+                /*for(Identifier id : manager.findResources("recipes", path -> path.endsWith(".json"))) {
+                    try(InputStream stream = manager.getResource(id).getInputStream()) {
+                        // Consume the stream however you want, medium, rare, or well done.
+                    } catch(Exception e) {
+                        TUTORIAL_LOG.error("Error occurred while loading resource json " + id.toString(), e);
+                    }
+                }
+
+                for(Resource resource : manager.getAllResources("recipes", path -> path.endsWith(".json"))) {
+                    try(InputStream stream = resource.getInputStream()) {
+                        // Consume the stream however you want, medium, rare, or well done.
+                    } catch(Exception e) {
+                        logWarning("Error occurred while loading resource json " + resource.toString() + " => " + e);
+                    }
+                }*/
+            }
+        });
 
         initializeBaritoneSettings();
 

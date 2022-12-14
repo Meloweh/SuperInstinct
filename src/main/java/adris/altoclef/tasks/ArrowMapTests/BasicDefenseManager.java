@@ -207,7 +207,7 @@ public class BasicDefenseManager {
         }
     }
 
-    private void haltMovement(final AltoClef mod) {
+    public static void haltMovement(final AltoClef mod) {
         if (mod.getClientBaritone().getInputOverrideHandler().isInputForcedDown(Input.MOVE_FORWARD)) {
             mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.MOVE_FORWARD, false);
             mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.SPRINT, false);
@@ -215,7 +215,7 @@ public class BasicDefenseManager {
         }
     }
 
-    private void go(final AltoClef mod) {
+    public static void go(final AltoClef mod) {
         if (!mod.getClientBaritone().getInputOverrideHandler().isInputForcedDown(Input.MOVE_FORWARD)) {
             mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.MOVE_FORWARD, true);
             mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.SPRINT, true);

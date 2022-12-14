@@ -7,12 +7,8 @@ import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
 import adris.altoclef.tasks.SecurityShelterTask;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
-import adris.altoclef.tasks.movement.CustomBaritoneGoalTask;
-import adris.altoclef.tasks.movement.DodgeProjectilesTask;
-import adris.altoclef.tasks.movement.RunAwayFromCreepersTask;
-import adris.altoclef.tasks.movement.RunAwayFromHostilesTask;
+import adris.altoclef.tasks.movement.*;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
-import adris.altoclef.tasksystem.Task;
 import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.util.baritone.CachedProjectile;
 import adris.altoclef.util.helpers.*;
@@ -29,17 +25,14 @@ import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.*;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.entity.projectile.FireballEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.SwordItem;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
@@ -64,6 +57,9 @@ public class MobDefenseChain extends SingleTaskChain {
     private boolean attacking = false;
     private static boolean safeToEat = false;
     private Optional<SecurityShelterTask> optShelterTask = Optional.empty();
+    private boolean shelterMode = false;
+    private IdleTask idleTask = new IdleTask();
+    private Optional<GetToXZTask> optXZTask = Optional.empty();
 
     public MobDefenseChain(TaskRunner runner) {
         super(runner);
@@ -143,6 +139,10 @@ public class MobDefenseChain extends SingleTaskChain {
             return Float.NEGATIVE_INFINITY;
         }
 
+        final boolean noTaskFoundButWhy = mod.getTaskRunner().getCurrentTaskChain() != null
+                                       && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null
+                                       && mod.getTaskRunner().getCurrentTaskChain().getTasks().size() < 1;
+
         // Apply avoidance if we're vulnerable, avoiding mobs if at all possible.
         // mod.getClientBaritoneSettings().avoidance.value = isVulnurable(mod);
         // Doing you a favor by disabling avoidance
@@ -150,19 +150,25 @@ public class MobDefenseChain extends SingleTaskChain {
 
         // Pause if we're not loaded into a world.
         if (!AltoClef.inGame()) return Float.NEGATIVE_INFINITY;
-
+        //if (mod.getTaskRunner().getCurrentTaskChain() != null && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null)
+        //    System.out.println(mod.getTaskRunner().getCurrentTaskChain().getTasks().size());
         _doingFunkyStuff = false;
         // Run away from creepers
         CreeperEntity blowingUp = getClosestFusingCreeper(mod);
         if (blowingUp != null) {
-            if (attacking) {
+            /*if (attacking) {
                 if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
                     _runAwayTask = new RunAwayFromCreepersTask(CREEPER_KEEP_DISTANCE);
-                    setTask(_runAwayTask);
+                    //setTask(_runAwayTask);
                     //return _cachedLastPriority;
+
                 }
                 attacking = false;
-            }
+            }*/
+            /*if (getCurrentTask() instanceof KillEntitiesTask) {
+                getCurrentTask().
+            }*/
+            safeToEat = false;
             if (!mod.getFoodChain().needsToEat() && (mod.getItemStorage().hasItem(Items.SHIELD) ||
                     mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
                     !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null &&
@@ -171,7 +177,6 @@ public class MobDefenseChain extends SingleTaskChain {
                 mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
                 LookHelper.lookAt(mod, blowingUp.getEyePos());
                 ItemStack shieldSlot = StorageHelper.getItemStackInSlot(PlayerSlot.OFFHAND_SLOT);
-                safeToEat = false;
                 if (shieldSlot.getItem() != Items.SHIELD) {
                     mod.getSlotHandler().forceEquipItemToOffhand(Items.SHIELD);
                 } else {
@@ -182,8 +187,7 @@ public class MobDefenseChain extends SingleTaskChain {
                 //Debug.logMessage("RUNNING AWAY!");
                 _runAwayTask = new RunAwayFromCreepersTask(CREEPER_KEEP_DISTANCE);
                 setTask(_runAwayTask);
-                safeToEat = false;
-                return 70 + blowingUp.getClientFuseTime(1) * 50;
+                return 100 + blowingUp.getClientFuseTime(1) * 50;
             }
         } else {
             if (!isProjectileClose(mod)) {
@@ -191,10 +195,53 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }
 
-
         final List<Entity> hostiles = mod.getEntityTracker().getHostiles();
         List<Entity> toDealWith = new ArrayList<>();
-        //if (toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() < 1 || numberOfProblematicEntities == 1) {
+        if (!hostiles.isEmpty()) {
+            try {
+                for (Entity hostile : hostiles) {
+                    int annoyingRange = (/*hostile instanceof SkeletonEntity ||*/ hostile instanceof WitchEntity || hostile
+                            instanceof PillagerEntity || hostile instanceof PiglinEntity || hostile instanceof StrayEntity) ? 15 : 7;
+                    boolean isClose = hostile.isInRange(mod.getPlayer(), annoyingRange);
+
+                    if (isClose) {
+                        isClose = LookHelper.seesPlayer(hostile, mod.getPlayer(), annoyingRange);
+                    }
+
+                    // Give each hostile a timer, if they're close for too long deal with them.
+                    if (isClose) {
+                        if (!_closeAnnoyingEntities.containsKey(hostile)) {
+                            boolean wardenAttacking = hostile instanceof WardenEntity;
+                            boolean witherAttacking = hostile instanceof WitherEntity;
+                            boolean endermanAttacking = hostile instanceof EndermanEntity;
+                            boolean blazeAttacking = hostile instanceof BlazeEntity;
+                            boolean witherSkeletonAttacking = hostile instanceof WitherSkeletonEntity;
+                            boolean hoglinAttacking = hostile instanceof HoglinEntity;
+                            boolean zoglinAttacking = hostile instanceof ZoglinEntity;
+                            boolean piglinBruteAttacking = hostile instanceof PiglinBruteEntity;
+                            if (blazeAttacking || witherSkeletonAttacking || hoglinAttacking || zoglinAttacking ||
+                                    piglinBruteAttacking || endermanAttacking || witherAttacking || wardenAttacking) {
+                                if (mod.getPlayer().getHealth() <= 10) {
+                                    _closeAnnoyingEntities.put(hostile, new TimerGame(0));
+                                } else {
+                                    _closeAnnoyingEntities.put(hostile, new TimerGame(Float.POSITIVE_INFINITY));
+                                }
+                            } else {
+                                _closeAnnoyingEntities.put(hostile, new TimerGame(0));
+                            }
+                            _closeAnnoyingEntities.get(hostile).reset();
+                        }
+                        if (_closeAnnoyingEntities.get(hostile).elapsed()) {
+                            toDealWith.add(hostile);
+                        }
+                    } else {
+                        _closeAnnoyingEntities.remove(hostile);
+                    }
+                }
+            } catch (ConcurrentModificationException e) {
+
+            }
+        }
         SwordItem bestSword = null;
         Item[] SWORDS = new Item[]{Items.NETHERITE_SWORD, Items.DIAMOND_SWORD, Items.IRON_SWORD, Items.GOLDEN_SWORD,
                 Items.STONE_SWORD, Items.WOODEN_SWORD};
@@ -212,47 +259,6 @@ public class MobDefenseChain extends SingleTaskChain {
         final long projectileMobCount = toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() + toDealWith.stream().filter(e -> e instanceof PillagerEntity).count();
         final long closeDangerCount = toDealWith.stream().filter(e -> e.distanceTo(mod.getPlayer()) < 6).count();
         final boolean preppedForMultiProjectileEnemies = CombatHelper.hasShield(mod) ? projectileMobCount < 3 : projectileMobCount < 2;
-        if (!hostiles.isEmpty()) {
-            for (Entity hostile : hostiles) {
-                int annoyingRange = (/*hostile instanceof SkeletonEntity ||*/ hostile instanceof WitchEntity || hostile
-                        instanceof PillagerEntity || hostile instanceof PiglinEntity || hostile instanceof StrayEntity) ? 15 : 7;
-                boolean isClose = hostile.isInRange(mod.getPlayer(), annoyingRange);
-
-                if (isClose) {
-                    isClose = LookHelper.seesPlayer(hostile, mod.getPlayer(), annoyingRange);
-                }
-
-                // Give each hostile a timer, if they're close for too long deal with them.
-                if (isClose) {
-                    if (!_closeAnnoyingEntities.containsKey(hostile)) {
-                        boolean wardenAttacking = hostile instanceof WardenEntity;
-                        boolean witherAttacking = hostile instanceof WitherEntity;
-                        boolean endermanAttacking = hostile instanceof EndermanEntity;
-                        boolean blazeAttacking = hostile instanceof BlazeEntity;
-                        boolean witherSkeletonAttacking = hostile instanceof WitherSkeletonEntity;
-                        boolean hoglinAttacking = hostile instanceof HoglinEntity;
-                        boolean zoglinAttacking = hostile instanceof ZoglinEntity;
-                        boolean piglinBruteAttacking = hostile instanceof PiglinBruteEntity;
-                        if (blazeAttacking || witherSkeletonAttacking || hoglinAttacking || zoglinAttacking ||
-                                piglinBruteAttacking || endermanAttacking || witherAttacking || wardenAttacking) {
-                            if (mod.getPlayer().getHealth() <= 10) {
-                                _closeAnnoyingEntities.put(hostile, new TimerGame(0));
-                            } else {
-                                _closeAnnoyingEntities.put(hostile, new TimerGame(Float.POSITIVE_INFINITY));
-                            }
-                        } else {
-                            _closeAnnoyingEntities.put(hostile, new TimerGame(0));
-                        }
-                        _closeAnnoyingEntities.get(hostile).reset();
-                    }
-                    if (_closeAnnoyingEntities.get(hostile).elapsed()) {
-                        toDealWith.add(hostile);
-                    }
-                } else {
-                    _closeAnnoyingEntities.remove(hostile);
-                }
-            }
-        }
 
         // Clear dead/non existing hostiles
         List<Entity> toRemove = new ArrayList<>();
@@ -271,10 +277,34 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }
 
+        final boolean mobTooClose = toDealWith.size() > 0 ? mod.getPlayer().distanceTo(toDealWith.get(0)) < 3 : false;
         safeToEat = numberOfProblematicEntities < 1 || numberOfProblematicEntities < 2 && mod.getPlayer().getHealth() >= 14;
 
-        if (mod.getPlayer().getHealth() <= 8 && mod.getItemStorage().getBlockTypes().size() >= SecurityShelterTask.minimumBlockCount(mod) && numberOfProblematicEntities > 2) {
+        //if (getCurrentTask() == null) System.out.println("no task?");
+
+        //doForceField(mod);
+        if ((mod.getPlayer().getHealth() <= 8 || noTaskFoundButWhy)
+                && numberOfProblematicEntities > 0
+                && !SecurityShelterTask.isFilled(mod)) {
+            if (mobTooClose) {
+                System.out.println("_killAura?");
+                _runAwayTask = null;
+                attacking = true;
+                setTask(new KillEntitiesTask(toDealWith.get(0).getClass()));
+                //_killAura.applyAura(toDealWith.get(0));
+                //doForceField(mod);
+            }
             safeToEat = false;
+            final BlockPos currBlock = mod.getPlayer().getBlockPos();
+            final Vec3d target = new Vec3d(currBlock.getX() + 0.5, currBlock.getY() + 1, currBlock.getZ() + 0.5);
+            if (mod.getPlayer().getPos().distanceTo(target) > 0.3) {
+                mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
+                LookHelper.lookAt(mod, target);
+                BasicDefenseManager.go(mod);
+                return 80;
+            }
+            BasicDefenseManager.haltMovement(mod);
+
             if (optShelterTask.isPresent() && optShelterTask.get().isFinished(mod)) {
                 optShelterTask.get().reset();
             }
@@ -282,7 +312,21 @@ public class MobDefenseChain extends SingleTaskChain {
                 optShelterTask = Optional.of(new SecurityShelterTask());
             }
             setTask(optShelterTask.get());
-            return 70;
+            shelterMode = SecurityShelterTask.isFilled(mod);
+            return 80;
+        }
+
+        if (shelterMode && numberOfProblematicEntities > 0) {
+            if (mod.getFoodChain().hasFood() && mod.getPlayer().getHealth() <= 19 || mod.getWorld().getTimeOfDay() < 3000) {
+                //final List<Optional<BlockPos>> overworldCandidates = new LinkedList<>();
+                //overworldCandidates.add(mod.getBlockTracker().getNearestTracking(Blocks.GRASS));
+                System.out.println("idling");
+                setTask(idleTask);
+            } else {
+                shelterMode = false;
+            }
+        } else {
+            shelterMode = false;
         }
 
         // Put out fire if we're standing on one like an idiot
@@ -304,8 +348,6 @@ public class MobDefenseChain extends SingleTaskChain {
                 return Float.NEGATIVE_INFINITY;
             }
         }
-
-        doForceField(mod);
 
         basicDefenseManager.onTick(mod);
         if (basicDefenseManager.isWorking()) {

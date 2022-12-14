@@ -34,32 +34,31 @@ public class SecurityShelterTask extends Task {
 
     @Override
     protected Task onTick(AltoClef mod) {
-        if (mod.getItemStorage().getBlockTypes().size() < 1) {
+        final List<BlockPos> around = getAround(mod);
+        finished = around.size() < 1 || mod.getItemStorage().getBlockTypes().size() < around.size();
+        if (finished) return null;
+        /*if (mod.getItemStorage().getBlockTypes().size() < 1) {
             finished = true;
             return null;
-        }
+        }*/
 
-        final List<BlockPos> around = getAround(mod);
-        finished = true;
+        //finished = true;
         for (final BlockPos pos : around) {
             final BlockState state = mod.getWorld().getBlockState(pos);
             if (state.isAir()) {
-                finished = false;
+                //finished = false;
                 BasicDefenseManager.fill(mod, pos);
             }
         }
         return null;
     }
 
-    public static int minimumBlockCount(final AltoClef mod) {
-        final BlockPos playerPos = mod.getPlayer().getBlockPos().up();
-        int count = 0;
-        if (mod.getWorld().getBlockState(playerPos.north()).isAir()) count++;
-        if (mod.getWorld().getBlockState(playerPos.west()).isAir()) count++;
-        if (mod.getWorld().getBlockState(playerPos.east()).isAir()) count++;
-        if (mod.getWorld().getBlockState(playerPos.south()).isAir()) count++;
-        if (mod.getWorld().getBlockState(playerPos.up()).isAir()) count++;
-        return count;
+    public static boolean hasEnoughBlocks(final AltoClef mod) {
+        return mod.getItemStorage().getBlockTypes().size() >= getAround(mod).size();
+    }
+
+    public static boolean isFilled(final AltoClef mod) {
+        return getAround(mod).size() == 0;
     }
 
     @Override

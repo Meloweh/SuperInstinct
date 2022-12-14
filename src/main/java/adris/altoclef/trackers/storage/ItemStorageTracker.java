@@ -16,7 +16,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.Recipe;
+import net.minecraft.recipe.RecipeManager;
 import net.minecraft.recipe.RecipeType;
+import net.minecraft.resource.Resource;
+import net.minecraft.resource.ResourceManager;
 import net.minecraft.screen.CraftingScreenHandler;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -309,12 +312,12 @@ public class ItemStorageTracker extends Tracker {
      * @author Draco18s, Meloweh
      */
     @Nullable
-    public static Recipe getRecipeWithOutput(ItemStack resultStack) {
+    public static net.minecraft.recipe.CraftingRecipe getRecipeWithOutput(ItemStack resultStack) {
         ItemStack recipeResult;
         List<net.minecraft.recipe.CraftingRecipe> recipes = MinecraftClient.getInstance().world.getRecipeManager().listAllOfType(RecipeType.CRAFTING);
         Iterator<net.minecraft.recipe.CraftingRecipe> iterator = recipes.iterator();
         while(iterator.hasNext()) {
-            Recipe tmpRecipe = iterator.next();
+            net.minecraft.recipe.CraftingRecipe tmpRecipe = iterator.next();
             recipeResult = tmpRecipe.getOutput();
             if (ItemStack.areItemsEqual(resultStack, recipeResult)) {
                 return tmpRecipe;
@@ -430,16 +433,14 @@ public class ItemStorageTracker extends Tracker {
             return false;
         }
         crossed.add(itemTarget);
-
         for (final Iterator<Item> iterator = Arrays.stream(itemTarget.getMatches()).iterator(); iterator.hasNext();) {
             final Item item = iterator.next();
+            System.out.println("isSlotInAnyDepthSatisfiable item: " + item.toString());
             final Recipe recipe = getRecipeWithOutput(item.getDefaultStack());
-
             if (recipe == null) return false;
 
             for (final Iterator it = recipe.getIngredients().iterator(); it.hasNext(); ) {
                 Ingredient ingredient = (Ingredient) it.next();
-
                 if (hasIngredientInAnyDepth(ingredient, mod, blacklist, previouslyBlacklisted)) return true; //found = true;
             }
 
@@ -479,6 +480,56 @@ public class ItemStorageTracker extends Tracker {
             blacklist.addAll(subBlacklist);
         }
         return true;
+    }
+    public final boolean isFullyCapableToCraft(final AltoClef mod, final net.minecraft.recipe.CraftingRecipe recipe) {
+        if (recipe == null) {
+            System.out.println("no recipe");
+            return false;
+        }
+
+        final List<Slot> blacklist = new ArrayList<>();
+        for (final Ingredient ingredient : recipe.getIngredients()) {
+            for (final ItemStack ingredientStack : ingredient.getMatchingStacks()) {
+                System.out.println("ingredientStackItem: " + ingredientStack.getItem().toString());
+                final ItemTarget itemTarget = new ItemTarget(ingredientStack.getItem());
+                if (itemTarget == null) continue;
+                if (itemTarget.getMatches() == null) continue;
+                final List<Slot> subBlacklist = new ArrayList<>();
+                crossed.clear();
+                if (!isSlotInAnyDepthSatisfiable(itemTarget, mod, subBlacklist, blacklist)) return false;
+                blacklist.addAll(subBlacklist);
+            }
+        }
+        return true;
+    }
+    public final boolean isFullyCapableToCraft(final AltoClef mod, final ItemStack stack) {
+        System.out.println("isFullyCapableToCraft:");
+        if (stack == null) {
+            System.out.println("no stack");
+            return false;
+        }
+        final net.minecraft.recipe.CraftingRecipe recipe = getRecipeWithOutput(stack);
+        if (recipe.getIngredients() == null) {
+            System.out.println("no ingredients");
+            return false;
+        }
+
+        return isFullyCapableToCraft(mod, recipe);
+        /*for (final Ingredient ingredient : recipe.getIngredients()) {
+            for (final ItemStack ingredientStack : ingredient.getMatchingStacks()) {
+                System.out.println(ingredientStack.getItem().toString());
+            }
+        }*/
+        /*
+        final CraftingRecipe badRecipe = CraftingRecipe.new;
+        //final ItemTarget target = new ItemTarget(stack.getItem());
+        //final RecipeTarget recipeTarget = new RecipeTarget(stack.getItem(), stack.getCount(), recipe);
+        return isFullyCapableToCraft(mod, recipeTarget);*/
+        //return false;
+    }
+
+    public final boolean isFullyCapableToCraft(final AltoClef mod, final Item item) {
+        return isFullyCapableToCraft(mod, new ItemStack(item));
     }
     /////Meloweh's crafting helpers end/////
 

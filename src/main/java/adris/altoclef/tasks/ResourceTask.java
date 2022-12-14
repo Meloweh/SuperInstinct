@@ -1,6 +1,7 @@
 package adris.altoclef.tasks;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.Debug;
 import adris.altoclef.tasks.container.PickupFromContainerTask;
 import adris.altoclef.tasks.movement.DefaultGoToDimensionTask;
 import adris.altoclef.tasks.movement.PickupDroppedItemTask;
@@ -11,9 +12,7 @@ import adris.altoclef.tasksystem.ITaskCanForce;
 import adris.altoclef.tasksystem.ITaskUsesCraftingGrid;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.trackers.storage.ContainerCache;
-import adris.altoclef.util.Dimension;
-import adris.altoclef.util.ItemTarget;
-import adris.altoclef.util.MiningRequirement;
+import adris.altoclef.util.*;
 import adris.altoclef.util.helpers.ItemHelper;
 import adris.altoclef.util.helpers.StlHelper;
 import adris.altoclef.util.helpers.StorageHelper;
@@ -23,6 +22,7 @@ import adris.altoclef.util.slots.Slot;
 import net.minecraft.block.Block;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.ArrayUtils;
@@ -48,7 +48,9 @@ public abstract class ResourceTask extends Task implements ITaskCanForce {
     private Block[] _mineIfPresent = null;
     private boolean _forceDimension = false;
     private Dimension _targetDimension;
-    private BlockPos _mineLastClosest = null;
+    private Optional<BlockPos> _mineLastClosest = Optional.empty();
+    private final Store store = new Store();
+    public static final String ATTRIBUTE_LAST_CLOSEST = "last_closest";
 
     public ResourceTask(ItemTarget[] itemTargets) {
         _itemTargets = itemTargets;
@@ -147,7 +149,10 @@ public abstract class ResourceTask extends Task implements ITaskCanForce {
             }
         }
 
+        //if (mod.getItemStorage().isFullyCapableToCraft(mod, _itemTargets[0].getMatches()[0].getDefaultStack()))
+
         // Check for chests and grab resources from them.
+
         if (_currentContainer == null) {
             List<ContainerCache> containersWithItem = mod.getItemStorage().getContainersWithItem(Arrays.stream(_itemTargets).reduce(new Item[0], (items, target) -> ArrayUtils.addAll(items, target.getMatches()), ArrayUtils::addAll));
             if (!containersWithItem.isEmpty()) {
@@ -173,18 +178,57 @@ public abstract class ResourceTask extends Task implements ITaskCanForce {
         }
 
         // We may just mine if a block is found.
+        /*if (_mineIfPresent != null) {
+            ArrayList<Block> satisfiedReqs = new ArrayList<>(Arrays.asList(_mineIfPresent));
+            satisfiedReqs.removeIf(block -> !StorageHelper.miningRequirementMet(mod, MiningRequirement.getMinimumRequirementForBlock(block)));
+            if (!satisfiedReqs.isEmpty()) {
+                if (mod.getBlockTracker().anyFound(satisfiedReqs.toArray(Block[]::new))) {
+                    final Block[] b = new Block[satisfiedReqs.size()];
+                    satisfiedReqs.toArray(b);
+                    Optional<BlockPos> closest = mod.getBlockTracker().getNearestTracking(mod.getPlayer().getPos(), b);
+                    if (closest.isPresent() && closest.get().isWithinDistance(mod.getPlayer().getPos(), mod.getModSettings().getResourceMineRange())) {
+                        //return new MineAndCollectTask(_itemTargets, _mineIfPresent, MiningRequirement.HAND);
+                        _mineLastClosest = closest.get();
+                    }
+                    if (_mineLastClosest != null) {
+                        if (_mineLastClosest.isWithinDistance(mod.getPlayer().getPos(), mod.getModSettings().getResourceMineRange() * 1.5 + 20)) {
+                            return new MineAndCollectTask(_itemTargets, _mineIfPresent, MiningRequirement.HAND);
+                        }
+                    }
+                }
+            }
+        }*/
         if (_mineIfPresent != null) {
             ArrayList<Block> satisfiedReqs = new ArrayList<>(Arrays.asList(_mineIfPresent));
             satisfiedReqs.removeIf(block -> !StorageHelper.miningRequirementMet(mod, MiningRequirement.getMinimumRequirementForBlock(block)));
             if (!satisfiedReqs.isEmpty()) {
                 if (mod.getBlockTracker().anyFound(satisfiedReqs.toArray(Block[]::new))) {
                     Optional<BlockPos> closest = mod.getBlockTracker().getNearestTracking(mod.getPlayer().getPos(), _mineIfPresent);
-                    if (closest.isPresent() && closest.get().isWithinDistance(mod.getPlayer().getPos(), mod.getModSettings().getResourceMineRange())) {
-                        _mineLastClosest = closest.get();
+
+                    //TODO: could this make the bot get stuck between two resources?
+                    if (closest.isPresent()) {
+                        store.setAttribute(ATTRIBUTE_LAST_CLOSEST, closest.get());
+                        //_mineLastClosest = closest;
                     }
-                    if (_mineLastClosest != null) {
-                        if (_mineLastClosest.isWithinDistance(mod.getPlayer().getPos(), mod.getModSettings().getResourceMineRange() * 1.5 + 20)) {
-                            return new MineAndCollectTask(_itemTargets, _mineIfPresent, MiningRequirement.HAND);
+
+                    if (store.hasAttribute(ATTRIBUTE_LAST_CLOSEST)) {
+                        final BlockPos _mineLastClosest = store.fromStorage(ATTRIBUTE_LAST_CLOSEST, BlockPos.class);
+                        final boolean isInChunk = mod.getChunkTracker().isChunkLoaded(_mineLastClosest);
+                        final boolean isMined = !mod.getBlockTracker().blockIsValid(_mineLastClosest, _mineIfPresent);
+
+                        if (isInChunk && isMined || !Blacklist.isBlacklisted(_mineLastClosest)) {
+                            //TODO so if we set it null here, shouldn't we ensure the next mining target to stick with executing MineAndCollectTask?
+                            //Answer no because if that would be the case then this would count for isBlacklisted too
+                            //_mineLastClosest = null;
+                            if (!store.removeAttribute(ATTRIBUTE_LAST_CLOSEST)) {
+                                Debug.logError(ATTRIBUTE_LAST_CLOSEST + " not present in store");
+                                System.out.println(ATTRIBUTE_LAST_CLOSEST + " not present in store");
+                                store.clearStore();
+                            }
+                        }
+
+                        if (store.hasAttribute(ATTRIBUTE_LAST_CLOSEST)) {
+                            return new MineAndCollectTask(_itemTargets, _mineIfPresent, MiningRequirement.HAND, store);
                         }
                     }
                 }
