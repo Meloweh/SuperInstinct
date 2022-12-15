@@ -9,6 +9,7 @@ import adris.altoclef.tasks.SecurityShelterTask;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
 import adris.altoclef.tasks.movement.*;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
+import adris.altoclef.tasksystem.Task;
 import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.util.baritone.CachedProjectile;
 import adris.altoclef.util.helpers.*;

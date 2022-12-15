@@ -3,6 +3,7 @@ package adris.altoclef;
 import adris.altoclef.butler.WhisperChecker;
 import adris.altoclef.tasks.ArrowMapTests.LastAttackTestTask;
 import adris.altoclef.tasks.CraftGenericManuallyTask;
+import adris.altoclef.tasks.SecurityShelterTask;
 import adris.altoclef.tasks.construction.PlaceBlockNearbyTask;
 import adris.altoclef.tasks.construction.PlaceSignTask;
 import adris.altoclef.tasks.construction.PlaceStructureBlockTask;
@@ -280,6 +281,9 @@ public class Playground {
                 break;
             case "ingr3":
                 System.out.println(mod.getItemStorage().isFullyCapableToCraft(mod, Items.GOLDEN_AXE));
+                break;
+            case "sec":
+                mod.runUserTask(new SecurityShelterTask());
                 break;
             case "smelt":
                 ItemTarget target = new ItemTarget("iron_ingot", 4);

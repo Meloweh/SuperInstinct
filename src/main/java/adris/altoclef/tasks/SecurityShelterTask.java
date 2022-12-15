@@ -35,7 +35,8 @@ public class SecurityShelterTask extends Task {
     @Override
     protected Task onTick(AltoClef mod) {
         final List<BlockPos> around = getAround(mod);
-        finished = around.size() < 1 || mod.getItemStorage().getBlockTypes().size() < around.size();
+        finished = around.size() < 1 || mod.getItemStorage().getBlockCount() < around.size();
+        System.out.println(finished + " " + around.size());
         if (finished) return null;
         /*if (mod.getItemStorage().getBlockTypes().size() < 1) {
             finished = true;

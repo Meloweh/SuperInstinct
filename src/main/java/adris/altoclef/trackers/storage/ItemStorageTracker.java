@@ -304,6 +304,17 @@ public class ItemStorageTracker extends Tracker {
         }
     }
 
+    public int getBlockCount() {
+        ensureUpdated();
+        synchronized (BaritoneHelper.MINECRAFT_LOCK) {
+            return _inventory.getInventoryStacks(true)
+                    .stream()
+                    .filter(e -> e.getItem() instanceof BlockItem)
+                    .mapToInt(e -> e.getCount())
+                    .sum();
+        }
+    }
+
     /**
      * RecipesUtils supplies several methods for easing the process of removing existing recipes,
      * as well as a helper method for making a 9x9 grid of the same item (nuggets to ingots, etc)

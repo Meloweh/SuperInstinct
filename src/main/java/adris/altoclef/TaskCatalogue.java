@@ -206,6 +206,8 @@ public class TaskCatalogue {
             // shapedRecipe2x2("stick", Items.STICK, 4, p, o, p, o);
             simple("stick", Items.STICK, CollectSticksTask::new);
             smelt("stone", Items.STONE, "cobblestone").dontMineIfPresent();
+            //simple("hay_block", Items.HAY_BLOCK, CollectHayBlockTask::new).dontMineIfPresent();
+            //simple("stone", Items.STONE, CollectStoneTask::new).forceDimension(Dimension.OVERWORLD);
             smelt("deepslate", Items.DEEPSLATE, "cobbled_deepslate").dontMineIfPresent();
             smelt("smooth_stone", Items.SMOOTH_STONE, "stone");
             smelt("smooth_quartz", Items.SMOOTH_QUARTZ, "quartz_block");
