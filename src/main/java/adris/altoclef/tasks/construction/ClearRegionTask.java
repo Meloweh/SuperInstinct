@@ -30,7 +30,7 @@ public class ClearRegionTask extends Task implements ITaskRequiresGrounded {
     @Override
     protected Task onTick(AltoClef mod) {
         if (!mod.getClientBaritone().getBuilderProcess().isActive()) {
-            mod.getClientBaritone().getBuilderProcess().clearArea(_from, _to);
+            mod.getClientBaritone().getBuilderProcess().clearArea(_from, _to, false);
         }
         return null;
     }

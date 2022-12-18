@@ -14,6 +14,10 @@ public class CubeBounds {
     final BlockPos high;
     final Predicate<BlockPos> predicate;
 
+    public CubeBounds(final BlockPos startPos, final BlockPos endPos) {
+        this(startPos, endPos.getX() - startPos.getX(), endPos.getY() - startPos.getY(), endPos.getZ() - startPos.getZ());
+    }
+
     public CubeBounds(final BlockPos startPos, final int sizeX, final int sizeY, final int sizeZ) {
         //Debug.logMessage(startPos.getX() + " " + startPos.getY() + " " + startPos.getZ());
         //Debug.logMessage((startPos.getX() + sizeX) + " " + (startPos.getY() + sizeY) + " " + (startPos.getZ() + sizeZ));

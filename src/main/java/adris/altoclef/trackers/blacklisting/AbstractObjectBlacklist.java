@@ -2,8 +2,10 @@ package adris.altoclef.trackers.blacklisting;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
+import adris.altoclef.util.CubeBounds;
 import adris.altoclef.util.MiningRequirement;
 import adris.altoclef.util.helpers.StorageHelper;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.HashMap;
@@ -18,6 +20,14 @@ public abstract class AbstractObjectBlacklist<T> {
     private final HashMap<T, BlacklistEntry> _entries = new HashMap<>();
 
     public void blackListItem(AltoClef mod, T item, int numberOfFailuresAllowed) {
+        if (mod.getClientBaritone().getBuilderProcess().isActive() && mod.getClientBaritone().getBuilderProcess().isFromAltoclef()) {
+            final CubeBounds cubeBounds = new CubeBounds(mod.getClientBaritone().getBuilderProcess().getMinPos(), mod.getClientBaritone().getBuilderProcess().getMaxPos());
+            final BlockPos blockPos = new BlockPos(getPos(item));
+            if (cubeBounds.inside(blockPos)) {
+                mod.getClientBaritone().getBuilderProcess().assumeValid(blockPos);
+            }
+            return;
+        }
         if (!_entries.containsKey(item)) {
             BlacklistEntry entry = new BlacklistEntry();
             entry.numberOfFailuresAllowed = numberOfFailuresAllowed;

@@ -3,12 +3,12 @@ package adris.altoclef.tasks;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.TaskCatalogue;
-import adris.altoclef.chains.FoodChain;
 import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
 import adris.altoclef.tasks.misc.EquipArmorTask;
 import adris.altoclef.tasks.resources.CollectFoodTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.trackers.storage.ItemStorageTracker;
+import adris.altoclef.util.BuilderPlacementSpamTracker;
 import adris.altoclef.util.CubeBounds;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.helpers.StorageHelper;
@@ -25,8 +25,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SchematicBuildTask extends Task {
     private boolean finished;
@@ -53,7 +55,10 @@ public class SchematicBuildTask extends Task {
     private final MovementProgressChecker _moveChecker = new MovementProgressChecker(4, 0.1, 4, 0.01);
     private Task walkAroundTask;
     private boolean needFood = false;
-    final DistanceProgressChecker buildChecker = new DistanceProgressChecker(60, 3, false);
+    private boolean areaCleared = false;
+    private boolean buildingStarted = false;
+    final DistanceProgressChecker buildChecker = new DistanceProgressChecker(30, 3, false);
+    private BuilderPlacementSpamTracker builderPlacementSpamTracker = new BuilderPlacementSpamTracker();
 
     public SchematicBuildTask(final String schematicFileName) {
         this(schematicFileName, new BlockPos(MinecraftClient.getInstance().player.getPos()));
@@ -93,6 +98,12 @@ public class SchematicBuildTask extends Task {
             builder = mod.getClientBaritone().getBuilderProcess();
         }
 
+        _moveChecker.reset();
+        _clickTimer.reset();
+        buildChecker.reset();
+    }
+
+    private void startBuilding(final AltoClef mod) {
         final File file = new File("schematics/" + schematicFileName);
         if (!file.exists()) {
             Debug.logMessage("Could not locate schematic file. Terminating...");
@@ -115,15 +126,12 @@ public class SchematicBuildTask extends Task {
         if (schemSize != null && builder.isFromAltoclef() && !this.addedAvoidance) {
             this.bounds = new CubeBounds(mod.getPlayer().getBlockPos(), this.schemSize.getX(), this.schemSize.getY(), this.schemSize.getZ());
             this.addedAvoidance = true;
-            mod.addToAvoidanceFile(this.bounds);
+            //mod.addToAvoidanceFile(this.bounds);
             mod.reloadAvoidanceFile();
             mod.unsetAvoidanceOf(this.bounds);
         }
         this.pause = false;
-
-        _moveChecker.reset();
-        _clickTimer.reset();
-        buildChecker.reset();
+        buildingStarted = true;
     }
 
     private List<BlockState> getTodoList(final AltoClef mod, final Map<BlockState, Integer> missing) {
@@ -198,7 +206,7 @@ public class SchematicBuildTask extends Task {
         }
 
         if (getMissing() != null && !getMissing().isEmpty() && (builder.isPaused() || !builder.isFromAltoclef()) || !builder.isActive()) {
-            if (!mod.inAvoidance(this.bounds)) {
+            if (this.bounds != null && !mod.inAvoidance(this.bounds)) {
                 mod.setAvoidanceOf(this.bounds);
             }
             //if (mod.getFoodChain().hasFood() < MIN_FOOD_UNITS) {
@@ -280,6 +288,7 @@ public class SchematicBuildTask extends Task {
             this.sourced = true;
         }
 
+        /*
         mod.unsetAvoidanceOf(this.bounds);
 
         if (this.sourced && !builder.isActive()) {
@@ -290,7 +299,37 @@ public class SchematicBuildTask extends Task {
             builder.resume();
             //Debug.logMessage("Resuming build process...");
             //System.out.println("Resuming builder...");
+        }*/
+        if (mod.inAvoidance(this.bounds)) {
+            mod.unsetAvoidanceOf(this.bounds);
         }
+        if (walkAroundTask != null) {
+            if (!walkAroundTask.isFinished(mod)) {
+                return walkAroundTask;
+            } else {
+                walkAroundTask = null;
+                builder.popStack();
+                _clickTimer.reset();
+                _moveChecker.reset();
+                buildChecker.reset();
+            }
+        }
+        if (!builder.isActive()) {
+            if (!areaCleared) {
+                final boolean pop = builder.popIsAreaClearageFinished();
+                if (pop) {
+                    areaCleared = true;
+                } else if (!builder.isAwaitingAreaClearage()) {
+                    builder.activateAreaClearage(schematicFileName, startPos);
+                }
+            } else if (!buildingStarted) {
+                startBuilding(mod);
+            } else if (this.sourced) {
+                builder.resume();
+            }
+        }
+
+
 
         /*if (_moveChecker.check(mod)) {
             _clickTimer.reset();
@@ -313,29 +352,26 @@ public class SchematicBuildTask extends Task {
         if (buildChecker.failed()) {
             if (walkAroundTask == null) {
                 Debug.logMessage("Timer elapsed.");
+                builder.onLostControl();
                 walkAroundTask = new RandomRadiusGoalTask(mod.getPlayer().getBlockPos(), 5d).next(mod.getPlayer().getBlockPos());
             }
         }
 
-        if (walkAroundTask != null) {
-            if (!walkAroundTask.isFinished(mod)) {
-                return walkAroundTask;
-            } else {
-                walkAroundTask = null;
-                builder.popStack();
-                _clickTimer.reset();
-                _moveChecker.reset();
-                buildChecker.reset();
+        //builderPlacementSpamTracker.tick(mod);
+        /*mod.getClientBaritone().getBuilderProcess().blacklistReady().forEach(e -> {
+            if (!mod.getBlockTracker().unreachable(e)) {
+                mod.getBlockTracker().requestBlockUnreachable(e);
             }
-        }
+        });*/
 
         return null;
     }
 
     @Override
     protected void onStop(AltoClef mod, Task interruptTask) {
-        builder.pause();
-        this.pause = true;
+        builder.reset();
+        //builder.pause();
+        //this.pause = true;
     }
 
     @Override

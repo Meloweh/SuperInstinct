@@ -20,6 +20,7 @@ import adris.altoclef.ui.CommandStatusOverlay;
 import adris.altoclef.ui.MessagePriority;
 import adris.altoclef.ui.MessageSender;
 import adris.altoclef.util.CubeBounds;
+import adris.altoclef.util.BuilderPlacementSpamTracker;
 import adris.altoclef.util.filestream.AvoidanceFile;
 import adris.altoclef.util.helpers.InputHelper;
 import baritone.Baritone;
@@ -85,7 +86,7 @@ public class AltoClef implements ModInitializer {
     private SlotHandler _slotHandler;
     // Butler
     private Butler _butler;
-
+    //private BuilderPlacementSpamTracker builderPlacementSpamTracker;
 
 
     // Are we in game (playing in a server/world)
@@ -191,6 +192,7 @@ public class AltoClef implements ModInitializer {
         _slotHandler = new SlotHandler(this);
 
         _butler = new Butler(this);
+        //builderPlacementSpamTracker = new BuilderPlacementSpamTracker();
 
         initializeCommands();
 
@@ -264,6 +266,7 @@ public class AltoClef implements ModInitializer {
         _messageSender.tick();
 
         _inputControls.onTickPost();
+        //builderPlacementSpamTracker.tick(this);
     }
 
     /// GETTERS AND SETTERS
@@ -360,6 +363,10 @@ public class AltoClef implements ModInitializer {
     public BlockTracker getBlockTracker() {
         return _blockTracker;
     }
+
+    /*public BuilderPlacementSpamTracker getPlacementSpamTracker() {
+        return builderPlacementSpamTracker;
+    }*/
 
     /**
      * Tracks of whether a chunk is loaded/visible or not

@@ -410,7 +410,7 @@ public class MobDefenseChain extends SingleTaskChain {
         }
 
         // Deal with hostiles because they are annoying.
-        // TODO: I don't think this lock is necessary at all.
+        // TODO: I don't think this lock is necessary at all
         if (mod.getModSettings().shouldDealWithAnnoyingHostiles()) {
             if (numberOfProblematicEntities > 0) {
                 if (canDealWith > numberOfProblematicEntities && preppedForMultiProjectileEnemies && closeDangerCount <= 3) {
