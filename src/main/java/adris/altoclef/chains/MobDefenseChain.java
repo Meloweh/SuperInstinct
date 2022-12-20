@@ -6,6 +6,8 @@ import adris.altoclef.control.KillAura;
 import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
 import adris.altoclef.tasks.SecurityShelterTask;
+import adris.altoclef.tasks.defense.MobHat;
+import adris.altoclef.tasks.defense.TPAura;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
 import adris.altoclef.tasks.movement.*;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
@@ -61,6 +63,8 @@ public class MobDefenseChain extends SingleTaskChain {
     private boolean shelterMode = false;
     private IdleTask idleTask = new IdleTask();
     private Optional<GetToXZTask> optXZTask = Optional.empty();
+    private TPAura tpAura = new TPAura();
+    private MobHat mobHat = new MobHat();
 
     public MobDefenseChain(TaskRunner runner) {
         super(runner);
@@ -196,253 +200,11 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }
 
-        final List<Entity> hostiles = mod.getEntityTracker().getHostiles();
-        List<Entity> toDealWith = new ArrayList<>();
-        if (!hostiles.isEmpty()) {
-            try {
-                for (Entity hostile : hostiles) {
-                    int annoyingRange = (/*hostile instanceof SkeletonEntity ||*/ hostile instanceof WitchEntity || hostile
-                            instanceof PillagerEntity || hostile instanceof PiglinEntity || hostile instanceof StrayEntity) ? 15 : 7;
-                    boolean isClose = hostile.isInRange(mod.getPlayer(), annoyingRange);
-
-                    if (isClose) {
-                        isClose = LookHelper.seesPlayer(hostile, mod.getPlayer(), annoyingRange);
-                    }
-
-                    // Give each hostile a timer, if they're close for too long deal with them.
-                    if (isClose) {
-                        if (!_closeAnnoyingEntities.containsKey(hostile)) {
-                            boolean wardenAttacking = hostile instanceof WardenEntity;
-                            boolean witherAttacking = hostile instanceof WitherEntity;
-                            boolean endermanAttacking = hostile instanceof EndermanEntity;
-                            boolean blazeAttacking = hostile instanceof BlazeEntity;
-                            boolean witherSkeletonAttacking = hostile instanceof WitherSkeletonEntity;
-                            boolean hoglinAttacking = hostile instanceof HoglinEntity;
-                            boolean zoglinAttacking = hostile instanceof ZoglinEntity;
-                            boolean piglinBruteAttacking = hostile instanceof PiglinBruteEntity;
-                            if (blazeAttacking || witherSkeletonAttacking || hoglinAttacking || zoglinAttacking ||
-                                    piglinBruteAttacking || endermanAttacking || witherAttacking || wardenAttacking) {
-                                if (mod.getPlayer().getHealth() <= 10) {
-                                    _closeAnnoyingEntities.put(hostile, new TimerGame(0));
-                                } else {
-                                    _closeAnnoyingEntities.put(hostile, new TimerGame(Float.POSITIVE_INFINITY));
-                                }
-                            } else {
-                                _closeAnnoyingEntities.put(hostile, new TimerGame(0));
-                            }
-                            _closeAnnoyingEntities.get(hostile).reset();
-                        }
-                        if (_closeAnnoyingEntities.get(hostile).elapsed()) {
-                            toDealWith.add(hostile);
-                        }
-                    } else {
-                        _closeAnnoyingEntities.remove(hostile);
-                    }
-                }
-            } catch (ConcurrentModificationException e) {
-
-            }
-        }
-        SwordItem bestSword = null;
-        Item[] SWORDS = new Item[]{Items.NETHERITE_SWORD, Items.DIAMOND_SWORD, Items.IRON_SWORD, Items.GOLDEN_SWORD,
-                Items.STONE_SWORD, Items.WOODEN_SWORD};
-        for (Item item : SWORDS) {
-            if (mod.getItemStorage().hasItem(item)) {
-                bestSword = (SwordItem) item;
-            }
-        }
-        int armor = mod.getPlayer().getArmor();
-        float damage = bestSword == null ? 0 : (1 + bestSword.getMaterial().getAttackDamage());
-        boolean hasShield = mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD);
-        int shield = hasShield ? 20 : 0;
-        int canDealWith = (int) Math.ceil((armor * 3.6 / 20.0) + (damage * 0.8) + (shield)) + 1;
-        toDealWith.sort((a, b) -> (int)((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer())) * 1000));
-        final long projectileMobCount = toDealWith.stream().filter(e -> e instanceof SkeletonEntity).count() + toDealWith.stream().filter(e -> e instanceof PillagerEntity).count();
-        final long closeDangerCount = toDealWith.stream().filter(e -> e.distanceTo(mod.getPlayer()) < 6).count();
-        final boolean preppedForMultiProjectileEnemies = CombatHelper.hasShield(mod) ? projectileMobCount < 3 : projectileMobCount < 2;
-
-        // Clear dead/non existing hostiles
-        List<Entity> toRemove = new ArrayList<>();
-        for (Entity check : _closeAnnoyingEntities.keySet()) {
-            if (!check.isAlive()) {
-                toRemove.add(check);
-            }
-        }
-        for (Entity remove : toRemove) _closeAnnoyingEntities.remove(remove);
-
-        int numberOfProblematicEntities = toDealWith.size();
-        if (!toDealWith.isEmpty()) {
-            if (toDealWith.get(0).getClass() == SlimeEntity.class || toDealWith.get(0).getClass() ==
-                    MagmaCubeEntity.class) {
-                numberOfProblematicEntities = 1;
-            }
-        }
-
-        final boolean mobTooClose = toDealWith.size() > 0 ? mod.getPlayer().distanceTo(toDealWith.get(0)) < 3 : false;
-        safeToEat = numberOfProblematicEntities < 1 || numberOfProblematicEntities < 2 && mod.getPlayer().getHealth() >= 14;
-
-        //if (getCurrentTask() == null) System.out.println("no task?");
-
-        //doForceField(mod);
-        if ((mod.getPlayer().getHealth() <= 8 || noTaskFoundButWhy)
-                && numberOfProblematicEntities > 0
-                && !SecurityShelterTask.isFilled(mod)) {
-            if (mobTooClose) {
-                System.out.println("_killAura?");
-                _runAwayTask = null;
-                attacking = true;
-                setTask(new KillEntitiesTask(toDealWith.get(0).getClass()));
-                //_killAura.applyAura(toDealWith.get(0));
-                //doForceField(mod);
-            }
-            safeToEat = false;
-            final BlockPos currBlock = mod.getPlayer().getBlockPos();
-            final Vec3d target = new Vec3d(currBlock.getX() + 0.5, currBlock.getY() + 1, currBlock.getZ() + 0.5);
-            if (mod.getPlayer().getPos().distanceTo(target) > 0.3) {
-                mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
-                LookHelper.lookAt(mod, target);
-                BasicDefenseManager.go(mod);
-                return 80;
-            }
-            BasicDefenseManager.haltMovement(mod);
-
-            if (optShelterTask.isPresent() && optShelterTask.get().isFinished(mod)) {
-                optShelterTask.get().reset();
-            }
-            if (optShelterTask.isEmpty()) {
-                optShelterTask = Optional.of(new SecurityShelterTask());
-            }
-            setTask(optShelterTask.get());
-            shelterMode = SecurityShelterTask.isFilled(mod);
-            return 80;
-        }
-
-        if (shelterMode && numberOfProblematicEntities > 0) {
-            if (mod.getFoodChain().hasFood() && mod.getPlayer().getHealth() <= 19 || mod.getWorld().getTimeOfDay() < 3000) {
-                //final List<Optional<BlockPos>> overworldCandidates = new LinkedList<>();
-                //overworldCandidates.add(mod.getBlockTracker().getNearestTracking(Blocks.GRASS));
-                System.out.println("idling");
-                setTask(idleTask);
-            } else {
-                shelterMode = false;
-            }
-        } else {
-            shelterMode = false;
-        }
-
-        // Put out fire if we're standing on one like an idiot
-        BlockPos fireBlock = isInsideFireAndOnFire(mod);
-        if (fireBlock != null) {
-            putOutFire(mod, fireBlock);
-            _wasPuttingOutFire = true;
-        } else {
-            // Stop putting stuff out if we no longer need to put out a fire.
-            mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, false);
-            _wasPuttingOutFire = false;
-        }
-
-        if (mod.getPlayer().getHealth() > 9) {
-            if (mod.getFoodChain().needsToEat() || mod.getMLGBucketChain().isFallingOhNo(mod) ||
-                    !mod.getMLGBucketChain().doneMLG() || mod.getMLGBucketChain().isChorusFruiting()) {
-                _killAura.stopShielding(mod);
-                stopShielding(mod);
-                return Float.NEGATIVE_INFINITY;
-            }
-        }
-
-        basicDefenseManager.onTick(mod);
-        if (basicDefenseManager.isWorking()) {
-            /*if (attacking) {
-                if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
-                    setTask(_runAwayTask);
-                    //return _cachedLastPriority;
-                }
-                attacking = false;
-            }*/
-            return 70 + 5 * basicDefenseManager.cost();
-        }
-        // Tell baritone to avoid mobs if we're vulnurable.
-        // Costly.
-        //mod.getClientBaritoneSettings().avoidance.value = isVulnurable(mod);
-
-        // Run away if a weird mob is close by.
-        Optional<Entity> universallyDangerous = getUniversallyDangerousMob(mod);
-        if (universallyDangerous.isPresent()) {
-            _runAwayTask = new RunAwayFromHostilesTask(DANGER_KEEP_DISTANCE, true);
-            setTask(_runAwayTask);
+        mobHat.attemptHat(mod);
+        tpAura.attemptAura(mod);
+        /*if (tpAura.isAttacking()) {
             return 70;
-        }
-
-        // Block projectiles with shield
-        /*if (!mod.getFoodChain().needsToEat() && mod.getModSettings().isDodgeProjectiles() && isProjectileClose(mod) &&
-                (mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
-                !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null &&
-                mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
-            ItemStack shieldSlot = StorageHelper.getItemStackInSlot(PlayerSlot.OFFHAND_SLOT);
-            if (shieldSlot.getItem() != Items.SHIELD) {
-                mod.getSlotHandler().forceEquipItemToOffhand(Items.SHIELD);
-            } else {
-                startShielding(mod);
-            }
-        } else {
-            if (blowingUp == null) {
-                stopShielding(mod);
-            }
-        }
-        // Dodge projectiles
-        if (mod.getPlayer().getHealth() <= 10 || _runAwayTask != null || mod.getEntityTracker().entityFound(PotionEntity.class) ||
-                (!mod.getItemStorage().hasItem(Items.SHIELD) && !mod.getItemStorage().hasItemInOffhand(Items.SHIELD))) {
-            if (!mod.getFoodChain().needsToEat() && mod.getModSettings().isDodgeProjectiles() && isProjectileClose(mod)) {
-                _doingFunkyStuff = true;
-                //Debug.logMessage("DODGING");
-                _runAwayTask = new DodgeProjectilesTask(ARROW_KEEP_DISTANCE_HORIZONTAL, ARROW_KEEP_DISTANCE_VERTICAL);
-                setTask(_runAwayTask);
-                return 65;
-            }
         }*/
-        // Dodge all mobs cause we boutta die son
-        if (isInDanger(mod) && !escapeDragonBreath(mod) && !mod.getFoodChain().isShouldStop()) {
-            if (_targetEntity == null) {
-                _runAwayTask = new RunAwayFromHostilesTask(DANGER_KEEP_DISTANCE, true);
-                setTask(_runAwayTask);
-                return 70;
-            }
-        }
-
-        // Deal with hostiles because they are annoying.
-        // TODO: I don't think this lock is necessary at all
-        if (mod.getModSettings().shouldDealWithAnnoyingHostiles()) {
-            if (numberOfProblematicEntities > 0) {
-                if (canDealWith > numberOfProblematicEntities && preppedForMultiProjectileEnemies && closeDangerCount <= 3) {
-                    // We can deal with it.
-                    _runAwayTask = null;
-                    attacking = true;
-                    setTask(new KillEntitiesTask(toDealWith.get(0).getClass()));
-                    return 65;
-                } else {
-                    // We can't deal with it
-                    _runAwayTask = new RunAwayFromHostilesTask(DANGER_KEEP_DISTANCE, true);
-                    setTask(_runAwayTask);
-                    return 80;
-                }
-                //}
-            }
-        }
-
-        // By default if we aren't "immediately" in danger but were running away, keep running away until we're good.
-        if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
-            setTask(_runAwayTask);
-            return _cachedLastPriority;
-        } else {
-            _runAwayTask = null;
-        }
-
-        if (mod.getFoodChain().needsToEat() || mod.getMLGBucketChain().isFallingOhNo(mod) ||
-                !mod.getMLGBucketChain().doneMLG() || mod.getMLGBucketChain().isChorusFruiting()) {
-            _killAura.stopShielding(mod);
-            stopShielding(mod);
-            return Float.NEGATIVE_INFINITY;
-        }
 
         return 0;
     }

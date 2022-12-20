@@ -30,17 +30,21 @@ import adris.altoclef.tasks.stupid.ReplaceBlocksTask;
 import adris.altoclef.tasks.stupid.SCP173Task;
 import adris.altoclef.tasks.stupid.TerminatorTask;
 import adris.altoclef.util.*;
+import adris.altoclef.util.helpers.LookHelper;
 import adris.altoclef.util.helpers.WorldHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.SkeletonEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.resource.Resource;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.chunk.EmptyChunk;
@@ -56,6 +60,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 /**
  * For testing.
@@ -135,6 +140,9 @@ public class Playground {
             case "":
                 // None specified
                 Debug.logWarning("Please specify a test (ex. stacked, bed, terminate)");
+                break;
+            case "idle":
+                mod.runUserTask(new IdleTask());
                 break;
             case "sign":
                 mod.runUserTask(new PlaceSignTask("Hello there!"));
@@ -293,6 +301,26 @@ public class Playground {
             case "iron":
                 mod.runUserTask(new ConstructIronGolemTask());
                 break;
+            case "tp1":
+                Vec3d v = mod.getPlayer().getPos().add(1,1,0);
+                mod.getPlayer().setPos(v.x, v.y, v.z);
+                break;
+            case "tp2":
+                Vec3d v2 = mod.getPlayer().getPos().add(2,2,0);
+                mod.getPlayer().setPos(v2.x, v2.y, v2.z);
+                break;
+            case "tp3":
+                Vec3d v3 = mod.getPlayer().getPos().add(3,3,0);
+                mod.getPlayer().setPos(v3.x, v3.y, v3.z);
+                break;
+            case "tp4":
+                Vec3d v4 = mod.getPlayer().getPos().add(4,4,0);
+                mod.getPlayer().setPos(v4.x, v4.y, v4.z);
+                break;
+            case "tp5":
+                Vec3d v5 = mod.getPlayer().getPos().add(5,5,0);
+                mod.getPlayer().setPos(v5.x, v5.y, v5.z);
+                break;
             case "avoid":
                 // Test block break predicate
                 mod.getBehaviour().avoidBlockBreaking((BlockPos b) -> (-1000 < b.getX() && b.getX() < 1000)
@@ -305,6 +333,15 @@ public class Playground {
                 mod.runUserTask(new EnterNetherPortalTask(new ConstructNetherPortalObsidianTask(), WorldHelper.getCurrentDimension() == Dimension.OVERWORLD ? Dimension.NETHER : Dimension.OVERWORLD));
                 break;
             case "skel": mod.runUserTask(new LastAttackTestTask()); break;
+            case "sees":
+                //List<Entity> skels = mod.getEntityTracker().getHostiles().stream().filter(e -> e instanceof SkeletonEntity).collect(Collectors.toList());
+                List<SkeletonEntity> skels = mod.getEntityTracker().getTrackedEntities(SkeletonEntity.class);
+                if (skels.size() > 0) {
+                    Entity skel = skels.get(0);
+                    System.out.println(LookHelper.seesPlayer(skel, mod.getPlayer(), 16));
+                }
+
+                break;
             case "kill":
                 List<ZombieEntity> zombs = mod.getEntityTracker().getTrackedEntities(ZombieEntity.class);
                 if (zombs.size() == 0) {
