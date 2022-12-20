@@ -64,7 +64,7 @@ public class TPAura {
             final Vec3d eye = entity.getEyePos();
             final BlockPos eyeBlock = new BlockPos(eye);
             final BlockPos tpGoal = eyeBlock.up();
-            if (!attacking && canTpThere(tpGoal, mod)) {
+            if (canTpThere(tpGoal, mod)) {
                 mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
                 mod.getPlayer().setPos(tpGoal.getX() + 0.5, tpGoal.getY(), tpGoal.getZ() + 0.5);
                 //mod.getMobDefenseChain().setTask(new KillEntityTask(entity));
