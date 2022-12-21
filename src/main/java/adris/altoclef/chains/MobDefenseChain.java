@@ -7,6 +7,7 @@ import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
 import adris.altoclef.tasks.SecurityShelterTask;
 import adris.altoclef.tasks.defense.MobHat;
+import adris.altoclef.tasks.defense.MobHatV2;
 import adris.altoclef.tasks.defense.TPAura;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
 import adris.altoclef.tasks.movement.*;
@@ -63,8 +64,8 @@ public class MobDefenseChain extends SingleTaskChain {
     private boolean shelterMode = false;
     private IdleTask idleTask = new IdleTask();
     private Optional<GetToXZTask> optXZTask = Optional.empty();
-    private TPAura tpAura = new TPAura();
-    private MobHat mobHat = new MobHat();
+    public TPAura tpAura = new TPAura();
+    private MobHatV2 mobHat = new MobHatV2();
 
     public MobDefenseChain(TaskRunner runner) {
         super(runner);
@@ -200,8 +201,12 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }
 
-        mobHat.attemptHat(mod);
-        tpAura.attemptAura(mod);
+        //mobHat.attemptHat(mod);
+        if (!tpAura.attemptAura(mod)) {
+            if (!mobHat.attemptHat(mod)) {
+                // arrow tracing
+            }
+        }
         /*if (tpAura.isAttacking()) {
             return 70;
         }*/

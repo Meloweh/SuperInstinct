@@ -39,6 +39,9 @@ public class MLGBucketFallChain extends SingleTaskChain implements ITaskOverride
     @Override
     public float getPriority(AltoClef mod) {
         if (!AltoClef.inGame()) return Float.NEGATIVE_INFINITY;
+        if (mod.getMobDefenseChain().tpAura.isAttacking()) {
+            return Float.NEGATIVE_INFINITY;
+        }
         if (isFallingOhNo(mod)) {
             _tryCollectWaterTimer.reset();
             setTask(new MLGBucketTask());

@@ -28,7 +28,7 @@ public class TPAura {
         final List<SkeletonEntity> nearbySkels = skels.stream().filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE).collect(Collectors.toList());
         final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
                 .filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.TP_RADIUS
-                        && !(e instanceof SkeletonEntity)
+                        //&& !(e instanceof SkeletonEntity)
                         && !(e instanceof CreeperEntity)
                         && !(e instanceof ProjectileEntity))
                 .collect(Collectors.toList());
@@ -42,7 +42,7 @@ public class TPAura {
         }
 
         if (arrows.size() > 0) {
-            System.out.println("arrows.size() > 0");
+            //System.out.println("arrows.size() > 0");
             final ArrowEntity arrow = arrows.get(0);
             final Vec3d vecProj = arrow.getPos();
             final Vec3d velProj = arrow.getVelocity();
@@ -51,12 +51,12 @@ public class TPAura {
             final Vec3d rawTpGoal = vecProj.add(oppositeDir);
             final BlockPos tpGoal = new BlockPos(rawTpGoal);
             if (canTpThere(tpGoal, mod)) {
-                System.out.println("can dodge");
+                //System.out.println("can dodge");
                 used.removeIf(e -> e == null || e.isRegionUnloaded() || e.horizontalCollision || e.verticalCollision || e.distanceTo(mod.getPlayer()) > 70);
                 used.add(arrow);
                 mod.getPlayer().setPos(tpGoal.getX() + 0.5, tpGoal.getY(), tpGoal.getZ() + 0.5);
             } else {
-                System.out.println("cannot dodge");
+                System.out.println("cannot dodge"); // TODO: ok but then fight if possible
             }
         } else if (nearbyHostiles.size() > 0 && nearbySkels.size() < 1) {
             //System.out.println("nearbySkels.size() < 1");
