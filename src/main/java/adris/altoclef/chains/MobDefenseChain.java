@@ -174,7 +174,7 @@ public class MobDefenseChain extends SingleTaskChain {
             /*if (getCurrentTask() instanceof KillEntitiesTask) {
                 getCurrentTask().
             }*/
-            safeToEat = false;
+            safeToEat = false;//mod.getClientBaritone().getBuilderProcess()
             if (!mod.getFoodChain().needsToEat() && (mod.getItemStorage().hasItem(Items.SHIELD) ||
                     mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
                     !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null &&
@@ -200,11 +200,11 @@ public class MobDefenseChain extends SingleTaskChain {
                 stopShielding(mod);
             }
         }
-
+        basicDefenseManager.onTick(mod);
         //mobHat.attemptHat(mod);
         if (!tpAura.attemptAura(mod)) {
             if (!mobHat.attemptHat(mod)) {
-                // arrow tracing
+
             }
         }
         /*if (tpAura.isAttacking()) {

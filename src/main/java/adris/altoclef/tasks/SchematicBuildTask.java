@@ -183,33 +183,9 @@ public class SchematicBuildTask extends Task {
         overrideMissing();
         this.sourced = false;
 
-        /*
-        if (StorageHelper.calculateInventoryFoodScore(mod) < MIN_FOOD_UNITS) {
-            needFood = true;
-            builder.pause();
-            this.pause = true;
-        }
-        if (needFood && StorageHelper.calculateInventoryFoodScore(mod) < FOOD_UNITS) {
-            if (mod.getItemStorage().bestPickaxeInInventory().isEmpty()) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_PICKAXE));
-            }
-            if (mod.getItemStorage().bestSwordInInventory().isEmpty()) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.STONE_SWORD));
-            }
-            if (!CombatHelper.hasShield(mod)) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.SHIELD));
-            }
-            return new CollectFoodTask(FOOD_UNITS);
-        } else if (needFood) {
-            needFood = false;
-            builder.resume();
-            this.pause = false;
-        }*/
         if (this.bounds != null && !mod.inAvoidance(this.bounds)) {
             mod.setAvoidanceOf(this.bounds);
         }
-        //if (!builder.isActive()) {
-            //if (mod.getFoodChain().hasFood() < MIN_FOOD_UNITS) {
         if (mod.getItemStorage().bestPickaxeInInventory().isEmpty() || mod.getItemStorage().bestPickaxeInInventory().equals(Items.STONE_PICKAXE)) {
             return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_PICKAXE));
         }
@@ -327,14 +303,14 @@ public class SchematicBuildTask extends Task {
         final boolean pop = builder.popIsAreaClearageFinished();
         areaCleared = areaCleared || pop;
         if (!builder.isActive()) {
-            if (this.sourced) {
-                builder.resume();
-            } else if (!clearingStarted) {
+            if (!clearingStarted) {
                 builder.activateAreaClearage(schematicFileName, startPos);
                 clearingStarted = true;
             } else if (!buildingStarted && areaCleared) {
                 startBuilding(mod);
                 buildingStarted = true;
+            } else if (this.sourced) {
+                builder.resume();
             }
         }
 

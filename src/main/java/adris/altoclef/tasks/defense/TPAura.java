@@ -31,7 +31,7 @@ public class TPAura {
         final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
                 .filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.TP_RADIUS
                         //&& !(e instanceof SkeletonEntity)
-                        && !(e instanceof CreeperEntity)
+                        //&& !(e instanceof CreeperEntity)
                         && !(e instanceof ProjectileEntity))
                 .collect(Collectors.toList());
         final List<ArrowEntity> arrows = mod.getEntityTracker().getTrackedEntities(ArrowEntity.class).stream()
@@ -43,6 +43,7 @@ public class TPAura {
             //System.out.println("nearbyHostiles.size() < 1");
         }
 
+        boolean tryAttack = true;
         if (arrows.size() > 0) {
             //System.out.println("arrows.size() > 0");
             final ArrowEntity arrow = arrows.get(0);
@@ -57,11 +58,14 @@ public class TPAura {
                 used.removeIf(e -> e == null || e.isRegionUnloaded() || e.horizontalCollision || e.verticalCollision || e.distanceTo(mod.getPlayer()) > 70);
                 used.add(arrow);
                 mod.getPlayer().setPos(tpGoal.getX() + 0.5, tpGoal.getY(), tpGoal.getZ() + 0.5);
+                tryAttack = false;
             } else {
-                System.out.println("cannot dodge"); // TODO: ok but then fight if possible
+                System.out.println("cannot dodge"); // TODO (done): ok but then fight if possible
             }
-        } else if (nearbyHostiles.size() > 0) {
+        }
+        if (tryAttack && nearbyHostiles.size() > 0) {
             nearbyHostiles.sort((a, b) -> (int) ((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer()))*1000));
+            nearbyHostiles.sort((a, b) -> Boolean.compare((a instanceof CreeperEntity), b instanceof CreeperEntity));
             final Iterator<Entity> entityIt = nearbyHostiles.iterator();
             do {
                 final Entity entity = entityIt.next();
