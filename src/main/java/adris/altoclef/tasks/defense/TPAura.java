@@ -16,12 +16,14 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class TPAura {
     private boolean attacking = false;
+    private MobHatV2 mobHat = new MobHatV2();
     private List<ArrowEntity> used = new LinkedList<>();
     public boolean attemptAura(final AltoClef mod) {
         final List<SkeletonEntity> skels = mod.getEntityTracker().getTrackedEntities(SkeletonEntity.class);
@@ -58,7 +60,39 @@ public class TPAura {
             } else {
                 System.out.println("cannot dodge"); // TODO: ok but then fight if possible
             }
-        } else if (nearbyHostiles.size() > 0 && nearbySkels.size() < 1) {
+        } else if (nearbyHostiles.size() > 0) {
+            nearbyHostiles.sort((a, b) -> (int) ((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer()))*1000));
+            final Iterator<Entity> entityIt = nearbyHostiles.iterator();
+            do {
+                final Entity entity = entityIt.next();
+                final Vec3d eye = entity.getEyePos();
+                final BlockPos eyeBlock = new BlockPos(eye);
+                final BlockPos tpGoal = eyeBlock.up();
+                if (canTpThere(tpGoal.up(), mod)) {
+                    mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
+                    mod.getPlayer().setPos(tpGoal.getX() + 0.5, tpGoal.up().getY(), tpGoal.getZ() + 0.5);
+                }
+                attacking = mobHat.attemptHat(mod);
+                if (!attacking && canTpThere(tpGoal, mod) && !(entity instanceof SkeletonEntity)) {
+                    mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
+                    mod.getPlayer().setPos(tpGoal.getX() + 0.5, tpGoal.getY(), tpGoal.getZ() + 0.5);
+                    //mod.getMobDefenseChain().setTask(new KillEntityTask(entity));
+                    float hitProg = mod.getPlayer().getAttackCooldownProgress(0);
+                    // Equip weapon
+                    KillEntityTask.equipWeapon(mod);
+                    if (hitProg >= 1) {
+                        if (mod.getPlayer().isOnGround() || mod.getPlayer().getVelocity().getY() < 0 || mod.getPlayer().isTouchingWater()) {
+                            LookHelper.lookAt(mod, entity.getEyePos());
+                            mod.getControllerExtras().attack(entity);
+                        }
+                    }
+                    attacking = true;
+                }
+            } while (entityIt.hasNext() && !attacking);
+        }
+
+
+        /*else if (nearbyHostiles.size() > 0 && nearbySkels.size() < 1) {
             //System.out.println("nearbySkels.size() < 1");
             final Entity entity = nearbyHostiles.get(0);
             final Vec3d eye = entity.getEyePos();
@@ -79,7 +113,7 @@ public class TPAura {
                 }
                 attacking = true;
             }
-        }
+        }*/
         return true;
     }
 

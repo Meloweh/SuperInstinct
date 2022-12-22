@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 public class MobHatV2 {
     private boolean nearbyPresent = false;
-
     private static List<BlockPos> getAround(final Entity entity) {
         final List<BlockPos> around = new LinkedList<>();
 
@@ -119,7 +118,8 @@ public class MobHatV2 {
     }
 
     public boolean attemptHat(AltoClef mod) {
-        final List<Entity> hostiles = mod.getEntityTracker().getHostiles().stream().filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE && LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)).collect(Collectors.toList());
+        final List<Entity> hostiles = mod.getEntityTracker().getHostiles().stream().filter(e ->
+                e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE && LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)).collect(Collectors.toList());
         nearbyPresent = hostiles.size() > 0;
         for (final Entity e : hostiles) {
             final List<BlockPos> around = getAround(e);
