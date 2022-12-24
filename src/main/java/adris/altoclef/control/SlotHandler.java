@@ -234,7 +234,7 @@ public class SlotHandler {
         if (toEquip == null) return false;
 
         //If the bot try to eat
-        if (_mod.getFoodChain().needsToEat() && !unInterruptable) { //unless we really need to force equip the item
+        if (_mod.getFoodChain().isEating()/*_mod.getFoodChain().needsToEat()*/ && !unInterruptable) { //unless we really need to force equip the item
             return false; //don't equip the item for now
         }
 

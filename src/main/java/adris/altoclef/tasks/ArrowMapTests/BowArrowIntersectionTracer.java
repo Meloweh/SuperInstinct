@@ -469,7 +469,7 @@ public final class BowArrowIntersectionTracer {
         }
     }
 
-    private static TraceResult getTraceResultFromFeedback(final CollisionFeedback feedbackX,
+    public static TraceResult getTraceResultFromFeedback(final CollisionFeedback feedbackX,
                                                           final CollisionFeedback feedbackY,
                                                           final CollisionFeedback feedbackZ,
                                                           final ArrowEntity arrow,

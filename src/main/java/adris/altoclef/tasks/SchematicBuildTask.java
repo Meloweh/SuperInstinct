@@ -22,13 +22,11 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SchematicBuildTask extends Task {
     private boolean finished;
@@ -40,7 +38,7 @@ public class SchematicBuildTask extends Task {
     private boolean gotBackup;
     private boolean needBackup;
     private Vec3i schemSize;
-    private CubeBounds bounds;
+    private static CubeBounds bounds;
     private Map<BlockState, Integer> missing;
     private boolean sourced;
     private boolean pause;
@@ -91,6 +89,10 @@ public class SchematicBuildTask extends Task {
         this.startPos = startPos;
     }
 
+    public static final Optional<CubeBounds> getBounds() {
+        return SchematicBuildTask.bounds == null ? Optional.empty() : Optional.of(SchematicBuildTask.bounds);
+    }
+
     @Override
     protected void onStart(AltoClef mod) {
         this.finished = false;
@@ -102,6 +104,11 @@ public class SchematicBuildTask extends Task {
         _moveChecker.reset();
         _clickTimer.reset();
         buildChecker.reset();
+    }
+
+    public boolean intersects(final BlockPos vec) {
+        if (bounds == null) return false;
+        return bounds.inside(vec);
     }
 
     private void startBuilding(final AltoClef mod) {
@@ -293,10 +300,10 @@ public class SchematicBuildTask extends Task {
                 return walkAroundTask;
             } else {
                 walkAroundTask = null;
-                builder.popStack();
                 _clickTimer.reset();
                 _moveChecker.reset();
                 buildChecker.reset();
+                builder.resume();
             }
         }
 
@@ -354,6 +361,7 @@ public class SchematicBuildTask extends Task {
             if (walkAroundTask == null) {
                 Debug.logMessage("Timer elapsed.");
                 builder.onLostControl();
+                builder.pause();
                 walkAroundTask = new RandomRadiusGoalTask(mod.getPlayer().getBlockPos(), 5d).next(mod.getPlayer().getBlockPos());
             }
         }

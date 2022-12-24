@@ -18,6 +18,7 @@ import net.minecraft.block.Block;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.dimension.DimensionType;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -90,6 +91,12 @@ public abstract class DoStuffInContainerTask extends Task {
         } else {
             // Track nearest container
             nearest = mod.getBlockTracker().getNearestTracking(currentPos, blockPos -> WorldHelper.canReach(mod, blockPos), _containerBlocks);
+            /*if (nearest.isPresent()) {
+                final Vec3d v = new Vec3d(nearest.get().getX() + 0.5, nearest.get().getY(), nearest.get().getZ() + 0.5);
+                if (v.distanceTo(mod.getPlayer().getPos()) > 50 && mod.getWorld().getRegistryKey().getValue().getPath().equals("overworld")) {
+                    nearest = Optional.empty();
+                }
+            }*/
         }
         if (nearest.isEmpty()) {
             // If all else fails, try using our placed task

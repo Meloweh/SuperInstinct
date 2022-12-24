@@ -32,7 +32,8 @@ public class MovementProgressChecker {
     public boolean check(AltoClef mod) {
 
         // Allow pause on eat
-        if (mod.getFoodChain().needsToEat()) {
+        //if (mod.getFoodChain().needsToEat()) {
+        if (mod.getFoodChain().isEating()) {
             _distanceChecker.reset();
             _mineChecker.reset();
         }

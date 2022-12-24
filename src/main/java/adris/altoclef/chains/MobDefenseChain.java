@@ -10,6 +10,7 @@ import adris.altoclef.tasks.defense.MobHat;
 import adris.altoclef.tasks.defense.MobHatV2;
 import adris.altoclef.tasks.defense.TPAura;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
+import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.tasks.movement.*;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
 import adris.altoclef.tasksystem.Task;
@@ -59,11 +60,14 @@ public class MobDefenseChain extends SingleTaskChain {
     private float _cachedLastPriority;
     private BasicDefenseManager basicDefenseManager = new BasicDefenseManager();
     private boolean attacking = false;
-    private static boolean safeToEat = false;
+    private static boolean safeToEat = true;
     private Optional<SecurityShelterTask> optShelterTask = Optional.empty();
     private boolean shelterMode = false;
     private IdleTask idleTask = new IdleTask();
     private Optional<GetToXZTask> optXZTask = Optional.empty();
+    private Optional<KillEntityTask> killEntity;
+    private Optional<RunAwayFromHostilesTask> runFromHostiles;
+
     public TPAura tpAura = new TPAura();
     private MobHatV2 mobHat = new MobHatV2();
 
@@ -81,6 +85,7 @@ public class MobDefenseChain extends SingleTaskChain {
     }
 
     public static boolean safeToEat() {
+        System.out.println("safeToEat: " + safeToEat);
         return safeToEat;
     }
 
@@ -145,9 +150,9 @@ public class MobDefenseChain extends SingleTaskChain {
             return Float.NEGATIVE_INFINITY;
         }
 
-        final boolean noTaskFoundButWhy = mod.getTaskRunner().getCurrentTaskChain() != null
+        /*final boolean noTaskFoundButWhy = mod.getTaskRunner().getCurrentTaskChain() != null
                                        && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null
-                                       && mod.getTaskRunner().getCurrentTaskChain().getTasks().size() < 1;
+                                       && mod.getTaskRunner().getCurrentTaskChain().getTasks().size() < 1;*/
 
         // Apply avoidance if we're vulnerable, avoiding mobs if at all possible.
         // mod.getClientBaritoneSettings().avoidance.value = isVulnurable(mod);
@@ -156,12 +161,13 @@ public class MobDefenseChain extends SingleTaskChain {
 
         // Pause if we're not loaded into a world.
         if (!AltoClef.inGame()) return Float.NEGATIVE_INFINITY;
+        //System.out.println(mod.getWorld().getRegistryKey().getValue().getPath());
         //if (mod.getTaskRunner().getCurrentTaskChain() != null && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null)
         //    System.out.println(mod.getTaskRunner().getCurrentTaskChain().getTasks().size());
         _doingFunkyStuff = false;
         // Run away from creepers
-        CreeperEntity blowingUp = getClosestFusingCreeper(mod);
-        if (blowingUp != null) {
+        Optional<CreeperEntity> blowingUp = getClosestFusingCreeper(mod);
+        if (blowingUp.isPresent()) {
             /*if (attacking) {
                 if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
                     _runAwayTask = new RunAwayFromCreepersTask(CREEPER_KEEP_DISTANCE);
@@ -174,14 +180,15 @@ public class MobDefenseChain extends SingleTaskChain {
             /*if (getCurrentTask() instanceof KillEntitiesTask) {
                 getCurrentTask().
             }*/
+            //System.out.println("creeper: " + blowingUp.get().getClientFuseTime(1));
             safeToEat = false;//mod.getClientBaritone().getBuilderProcess()
-            if (!mod.getFoodChain().needsToEat() && (mod.getItemStorage().hasItem(Items.SHIELD) ||
+            if (/*!mod.getFoodChain().needsToEat() &&*/(mod.getItemStorage().hasItem(Items.SHIELD) ||
                     mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
                     !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null &&
                     mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
                 _doingFunkyStuff = true;
                 mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
-                LookHelper.lookAt(mod, blowingUp.getEyePos());
+                LookHelper.lookAt(mod, blowingUp.get().getEyePos());
                 ItemStack shieldSlot = StorageHelper.getItemStackInSlot(PlayerSlot.OFFHAND_SLOT);
                 if (shieldSlot.getItem() != Items.SHIELD) {
                     mod.getSlotHandler().forceEquipItemToOffhand(Items.SHIELD);
@@ -193,18 +200,35 @@ public class MobDefenseChain extends SingleTaskChain {
                 //Debug.logMessage("RUNNING AWAY!");
                 _runAwayTask = new RunAwayFromCreepersTask(CREEPER_KEEP_DISTANCE);
                 setTask(_runAwayTask);
-                return 100 + blowingUp.getClientFuseTime(1) * 50;
+                return 100 + blowingUp.get().getClientFuseTime(1) * 50;
             }
         } else {
             if (!isProjectileClose(mod)) {
                 stopShielding(mod);
+                safeToEat = true;
             }
         }
         basicDefenseManager.onTick(mod);
-        //mobHat.attemptHat(mod);
         if (!tpAura.attemptAura(mod)) {
             if (!mobHat.attemptHat(mod)) {
-
+                final List<Entity> hostiles = mod.getEntityTracker().getHostiles();
+                if (hostiles.size() > 0) {
+                    hostiles.sort((a, b) -> (int) ((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer()))*1000));
+                    final Entity nearest = hostiles.get(0);
+                    if (nearest.distanceTo(mod.getPlayer()) < 3) {
+                        if (killEntity.isEmpty() || !killEntity.get().isActive()) {
+                            killEntity = Optional.of(new KillEntityTask(nearest));
+                        }
+                        setTask(killEntity.get());
+                    } else {
+                        if (runFromHostiles.isEmpty() || !runFromHostiles.get().isActive()) {
+                            runFromHostiles = Optional.of(new RunAwayFromHostilesTask(7, true));
+                        }
+                        setTask(runFromHostiles.get());
+                    }
+                } else {
+                    safeToEat = true;
+                }
             }
         }
         /*if (tpAura.isAttacking()) {
@@ -289,9 +313,9 @@ public class MobDefenseChain extends SingleTaskChain {
         _killAura.applyAura(entity);
     }
 
-    private CreeperEntity getClosestFusingCreeper(AltoClef mod) {
+    public static Optional<CreeperEntity> getClosestFusingCreeper(AltoClef mod) {
         double worstSafety = Float.POSITIVE_INFINITY;
-        CreeperEntity target = null;
+        Optional target = Optional.empty();
         try {
             List<CreeperEntity> creepers = mod.getEntityTracker().getTrackedEntities(CreeperEntity.class);
             for (CreeperEntity creeper : creepers) {
@@ -303,13 +327,12 @@ public class MobDefenseChain extends SingleTaskChain {
                 // At max fuse, the cost goes to basically zero.
                 double safety = getCreeperSafety(mod.getPlayer().getPos(), creeper);
                 if (safety < worstSafety) {
-                    target = creeper;
+                    target = Optional.of(creeper);
                 }
             }
         } catch (ConcurrentModificationException | ArrayIndexOutOfBoundsException | NullPointerException e) {
             // IDK why but these exceptions happen sometimes. It's extremely bizarre and I have no idea why.
             Debug.logWarning("Weird Exception caught and ignored while scanning for creepers: " + e.getMessage());
-            return target;
         }
         return target;
     }

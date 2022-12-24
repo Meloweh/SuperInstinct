@@ -4,6 +4,7 @@ import adris.altoclef.AltoClef;
 import adris.altoclef.Settings;
 import adris.altoclef.tasks.resources.CollectFoodTask;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
+import adris.altoclef.tasksystem.Task;
 import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.util.helpers.*;
 import adris.altoclef.util.slots.PlayerSlot;
@@ -37,6 +38,9 @@ public class FoodChain extends SingleTaskChain {
     private Optional<Item> _cachedPerfectFood = Optional.empty();
     private int _cachedFoodScore = 0;
     private boolean shouldStop = false;
+    public static final int FOOD_UNITS = 100;
+    public static final int MIN_FOOD_UNITS = 10;
+    private boolean needCollectFood = false;
 
     public FoodChain(TaskRunner runner) {
         super(runner);
@@ -56,6 +60,10 @@ public class FoodChain extends SingleTaskChain {
         mod.getExtraBaritoneSettings().setInteractionPaused(true);
     }
 
+    public boolean isEating() {
+        return _isTryingToEat;
+    }
+
     private void stopEat(AltoClef mod) {
         if (_isTryingToEat) {
             if (mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) {
@@ -72,6 +80,34 @@ public class FoodChain extends SingleTaskChain {
             mod.getInputControls().release(Input.CLICK_RIGHT);
             mod.getExtraBaritoneSettings().setInteractionPaused(false);
         }
+    }
+
+    public Task restock(final AltoClef mod) {
+        if (StorageHelper.calculateInventoryFoodScore(mod) < MIN_FOOD_UNITS) {
+            needCollectFood = true;
+            mod.getClientBaritone().getBuilderProcess().pause();
+        }
+        if (needCollectFood && StorageHelper.calculateInventoryFoodScore(mod) < FOOD_UNITS) {
+            return new CollectFoodTask(FOOD_UNITS);
+        } else if (needCollectFood) {
+            needCollectFood = false;
+        }
+        return null;
+    }
+
+    /*public Optional<Task> updateEating(final AltoClef mod) {
+        if (needsToEat() && isFoodCollectionRequired()) {
+            if (hasFood()) {
+                return Optional.empty();
+            } else {
+                return Optional.of(restock(mod));
+            }
+        }
+        return Optional.empty();
+    }*/
+
+    public boolean isFoodCollectionRequired() {
+        return this.needCollectFood || !hasFood();
     }
 
     @Override

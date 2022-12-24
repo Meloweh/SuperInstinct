@@ -2,6 +2,7 @@ package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
+import adris.altoclef.tasks.SchematicBuildTask;
 import adris.altoclef.util.helpers.LookHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
@@ -46,7 +47,7 @@ public class MobHatV2 {
                 around.add(pos);
             }
         }
-        System.out.println("around.size(): " + around.size());
+        //System.out.println("around.size(): " + around.size());
 
         final BlockPos minEdgeNorth = minSpanBlock.north();
         final BlockPos minEdgeWest = minSpanBlock.west();
@@ -78,7 +79,7 @@ public class MobHatV2 {
             around.add(second);
         }
 
-        System.out.println("around.size(): " + around.size());
+        //System.out.println("around.size(): " + around.size());
         /*around.add(minEdgeNorth);
         around.add(minEdgeWest);
         around.add(maxEdgeSouth);
@@ -117,6 +118,26 @@ public class MobHatV2 {
         return around;
     }
 
+    public boolean canAttemptHat(final AltoClef mod) {
+        final List<Entity> hostiles = mod.getEntityTracker().getHostiles().stream().filter(e ->
+                e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE && LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)).collect(Collectors.toList());
+        if (mod.getItemStorage().getBlockCount() < 1) {
+            return false;
+        }
+        for (final Entity e : hostiles) {
+            final List<BlockPos> around = getAround(e);
+            around.sort((a, b) -> b.getManhattanDistance(mod.getPlayer().getBlockPos()) - a.getManhattanDistance(mod.getPlayer().getBlockPos()));
+            if (around.size() < 1) {
+                continue;
+            }
+            if (mod.getItemStorage().getBlockCount() < around.size()) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
     public boolean attemptHat(AltoClef mod) {
         final List<Entity> hostiles = mod.getEntityTracker().getHostiles().stream().filter(e ->
                 e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE && LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)).collect(Collectors.toList());
@@ -128,6 +149,9 @@ public class MobHatV2 {
                 return false;
             }
             for (final BlockPos pos : around) {
+                if (SchematicBuildTask.getBounds().isPresent() && SchematicBuildTask.getBounds().get().inside(pos)) {
+                    return false;
+                }
                 final BlockState state = mod.getWorld().getBlockState(pos);
                 if (state.isAir()) {
                     BasicDefenseManager.fill(mod, pos);

@@ -60,6 +60,7 @@ public abstract class AbstractKillEntityTask extends AbstractDoToEntityTask {
         // Equip weapon
         equipWeapon(mod);
         if (hitProg >= 1) {
+            System.out.println("onEntityInteract: " + mod.getPlayer().isOnGround() + " " + (mod.getPlayer().getVelocity().getY() < 0) + " " + mod.getPlayer().isTouchingWater());
             if (mod.getPlayer().isOnGround() || mod.getPlayer().getVelocity().getY() < 0 || mod.getPlayer().isTouchingWater()) {
                 LookHelper.lookAt(mod, entity.getEyePos());
                 mod.getControllerExtras().attack(entity);
