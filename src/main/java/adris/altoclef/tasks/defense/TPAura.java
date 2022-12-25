@@ -53,8 +53,8 @@ public class TPAura {
     }
 
     public boolean attemptAura(final AltoClef mod) {
-        final List<SkeletonEntity> skels = mod.getEntityTracker().getTrackedEntities(SkeletonEntity.class);
-        final List<SkeletonEntity> nearbySkels = skels.stream().filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE).collect(Collectors.toList());
+        //final List<SkeletonEntity> skels = mod.getEntityTracker().getTrackedEntities(SkeletonEntity.class);
+        //final List<SkeletonEntity> nearbySkels = skels.stream().filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE).collect(Collectors.toList());
         final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
                 .filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.TP_RADIUS
                         //&& !(e instanceof SkeletonEntity)
@@ -163,7 +163,7 @@ public class TPAura {
                     mod.getPlayer().setPos(tpGoal.getX() + 0.5, tpGoal.up().getY(), tpGoal.getZ() + 0.5);
                 }
                 attacking = mobHat.attemptHat(mod);
-                if (!attacking && canTpThere(tpGoal, mod) && !(entity instanceof SkeletonEntity) && !(entity instanceof CreeperEntity)) {
+                if (!attacking && canTpThere(tpGoal, mod) && (!(entity instanceof SkeletonEntity) || nearbyHostiles.size() < 2 && mod.getPlayer().getHealth() > 10) && !(entity instanceof CreeperEntity)) {
                     mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
 
                     final Vec3d newPos3d = new Vec3d(tpGoal.getX() + 0.5, entity.getPos().getY() + entity.getBoundingBox().getYLength() + 1, tpGoal.getZ() + 0.5);

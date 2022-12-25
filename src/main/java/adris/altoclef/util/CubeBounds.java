@@ -70,4 +70,21 @@ public class CubeBounds {
     public Predicate<BlockPos> getPredicate() {
         return this.predicate;
     }
+
+    /*north: neg z
+  south: pos z
+  west:  neg x
+  east:  pos x
+   */
+    public CubeBounds expand(int r) {
+        BlockPos low2 = new BlockPos(low.getX(), low.getY(), low.getZ());
+        BlockPos high2 = new BlockPos(high.getX(), high.getY(), high.getZ());
+
+        for (int rr = r; rr > 0; rr--) {
+            low2 = low.north().west();
+            high2 = high.south().east();
+        }
+
+        return new CubeBounds(low2, high2);
+    }
 }

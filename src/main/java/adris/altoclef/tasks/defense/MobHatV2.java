@@ -149,7 +149,7 @@ public class MobHatV2 {
                 return false;
             }
             for (final BlockPos pos : around) {
-                if (SchematicBuildTask.getBounds().isPresent() && SchematicBuildTask.getBounds().get().inside(pos)) {
+                if (SchematicBuildTask.getBounds().isPresent() && SchematicBuildTask.getBounds().get().expand(3).inside(pos)) {
                     return false;
                 }
                 final BlockState state = mod.getWorld().getBlockState(pos);
