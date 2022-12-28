@@ -576,13 +576,13 @@ public class BasicDefenseManager {
             final boolean isFloorThickUnderPlayer = isPlayerFloorThick(mod);
             final boolean canBreakFloor = hasFloorBreakTool(mod);
 
-            System.out.println("isShieldStrategy: " + isShieldStrategy);
+            /*System.out.println("isShieldStrategy: " + isShieldStrategy);
             System.out.println("hasEnoughShieldingTime: " + hasEnoughShieldingTime);
             System.out.println("isBlockInInv: " + isBlockInInv);
             System.out.println("isSideFloored: " + isSideFloored);
             System.out.println("isJumpableSpot: " + isJumpableSpot);
             System.out.println("isFloorThickUnderPlayer: " + isFloorThickUnderPlayer);
-            System.out.println("canBreakFloor: " + canBreakFloor);
+            System.out.println("canBreakFloor: " + canBreakFloor);*/
 
             if (allFromSameSide && (isShieldStrategy || hasEnoughShieldingTime) && CombatHelper.hasShield(mod)) {
                 this.strategy = Strategy.SHIELD;

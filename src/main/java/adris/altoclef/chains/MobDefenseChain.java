@@ -69,8 +69,8 @@ public class MobDefenseChain extends SingleTaskChain {
     private boolean shelterMode = false;
     private IdleTask idleTask = new IdleTask();
     private Optional<GetToXZTask> optXZTask = Optional.empty();
-    private Optional<KillEntityTask> killEntity;
-    private Optional<RunAwayFromHostilesTask> runFromHostiles;
+    private Optional<KillEntityTask> killEntity = Optional.empty();
+    private Optional<RunAwayFromHostilesTask> runFromHostiles = Optional.empty();
 
     public TPAura tpAura = new TPAura();
     private MobHatV2 mobHat = new MobHatV2();
@@ -190,8 +190,9 @@ public class MobDefenseChain extends SingleTaskChain {
                 if (!isFilled) {
                     if (veryCloseHostiles.size() > 0) {
                         final BlockPos overPlayer = new BlockPos(mod.getPlayer().getEyePos()).up().up();
-                        if (mod.getPlayer().isOnGround() && TPAura.canTpThere(mod, overPlayer)) {
-                            TPAura.tp(mod, overPlayer);
+                        final Vec3d tpGoal = new Vec3d(overPlayer.getX() + 0.5, overPlayer.getY(), overPlayer.getZ() + 0.5);
+                        if (mod.getPlayer().isOnGround() && TPAura.canTpThere(mod, tpGoal)) {
+                            TPAura.tp(mod, tpGoal);
                         } else {
                             // hit 'em
                         }
@@ -237,8 +238,8 @@ public class MobDefenseChain extends SingleTaskChain {
                 safeToEat = true;
             }
         }*/
-        basicDefenseManager.onTick(mod);
         if (!tpAura.attemptAura(mod)) {
+            basicDefenseManager.onTick(mod);
             if (!mobHat.attemptHat(mod)) {
                 final List<Entity> hostiles = mod.getEntityTracker().getHostiles();
                 if (hostiles.size() > 0) {
