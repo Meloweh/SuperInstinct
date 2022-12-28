@@ -105,6 +105,7 @@ public class EnterNetherPortalTask extends Task {
         }
         if (!mod.getBlockTracker().anyFound(standablePortal, Blocks.NETHER_PORTAL)) {
             setDebugState("Making new nether portal.");
+            final boolean BUILD_IN_LAYERS_FALSE = false;
             if (WorldHelper.getCurrentDimension() == Dimension.OVERWORLD) {
                 return new ConstructNetherPortalBucketTask();
             } else {

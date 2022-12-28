@@ -11,6 +11,7 @@ import adris.altoclef.tasks.construction.compound.ConstructIronGolemTask;
 import adris.altoclef.tasks.construction.compound.ConstructNetherPortalObsidianTask;
 import adris.altoclef.tasks.container.SmeltInFurnaceTask;
 import adris.altoclef.tasks.container.StoreInAnyContainerTask;
+import adris.altoclef.tasks.defense.TPAura;
 import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.tasks.examples.ExampleTask2;
 import adris.altoclef.tasks.misc.EquipArmorTask;
@@ -44,6 +45,7 @@ import net.minecraft.item.Items;
 import net.minecraft.resource.Resource;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.registry.Registry;
@@ -201,6 +203,9 @@ public class Playground {
             case "stacked2":
                 mod.runUserTask(new EquipArmorTask(Items.DIAMOND_CHESTPLATE));
                 break;
+            case "vclip":
+                TPAura.tp(mod, mod.getPlayer().getBlockPos().up().up().up());
+                break;
             case "ravage":
                 mod.runUserTask(new RavageRuinedPortalsTask());
                 break;
@@ -212,6 +217,20 @@ public class Playground {
                 break;
             case "ingr1":
                 System.out.println(mod.getItemStorage().isFullyCapableToCraft(mod, Items.IRON_CHESTPLATE));
+                break;
+            case "chorus":
+                TPAura.chorusTp(mod);
+                break;
+            case "box":
+                System.out.println(mod.getPlayer().getBoundingBox().toString());
+                System.out.println("offset to zero: " + mod.getPlayer().getBoundingBox().offset(mod.getPlayer().getPos().multiply(-1)));
+                System.out.println("and then back to place pos: " + mod.getPlayer().getBoundingBox().offset(mod.getPlayer().getPos().multiply(-1)).offset(mod.getPlayer().getPos()));
+
+                break;
+            case "pempty":
+                final Box box = mod.getPlayer().getBoundingBox();
+                final Box newBox = new Box(box.minX, box.minY - 3, box.minZ, box.maxX, box.maxY - 3, box.maxZ);
+                System.out.println(mod.getWorld().isSpaceEmpty(newBox));
                 break;
             case "res":
                 System.out.println("start res:");
@@ -291,7 +310,7 @@ public class Playground {
                 System.out.println(mod.getItemStorage().isFullyCapableToCraft(mod, Items.GOLDEN_AXE));
                 break;
             case "sec":
-                mod.runUserTask(new SecurityShelterTask());
+                SecurityShelterTask.attemptShelter(mod);
                 break;
             case "smelt":
                 ItemTarget target = new ItemTarget("iron_ingot", 4);

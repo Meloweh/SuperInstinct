@@ -1,6 +1,7 @@
 package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.chains.MobDefenseChain;
 import adris.altoclef.tasks.ArrowMapTests.BowArrowIntersectionTracer;
 import adris.altoclef.tasks.ArrowMapTests.CollisionFeedback;
 import adris.altoclef.tasks.ArrowMapTests.SimMovementState;
@@ -9,15 +10,26 @@ import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.util.helpers.LookHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.mob.SkeletonEntity;
+import net.minecraft.entity.passive.FoxEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
+import net.minecraft.world.event.GameEvent;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,8 +40,9 @@ public class TPAura {
     private List<ArrowEntity> used = new LinkedList<>();
     //private Optional<SkeletonEntity> recentSource = Optional.empty();
     private Optional<BlockPos> prev = Optional.empty();
+    private final static Random rand = new Random();
 
-    private void cancelFall(final AltoClef mod) {
+    private static void cancelFall(final AltoClef mod) {
         mod.getPlayer().networkHandler.sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(true));
     }
     private double SVM2d(final Vec3d startPos, final Vec3d endPos, final Vec3d orthPoint) {
@@ -50,6 +63,14 @@ public class TPAura {
         double phi = Math.acos(vec.dotProduct(arrowVec) / n);
         //System.out.println(phi);
         return phi > 3 * Math.PI / 4;
+    }
+
+    private static List<Entity> explodingCreepersAt(final AltoClef mod, final Vec3d vec) {
+        return mod.getEntityTracker().getTrackedEntities(CreeperEntity.class).stream().filter(e -> distanceTo(e.getPos(), vec) > DefenseConstants.CREEPER_RADIUS).collect(Collectors.toList());
+    }
+
+    private static boolean explodingCreeperAt(final AltoClef mod, final Vec3d vec) {
+        return explodingCreepersAt(mod, vec).size() > 0;
     }
 
     public boolean attemptAura(final AltoClef mod) {
@@ -124,27 +145,28 @@ public class TPAura {
             //nearbyHostiles.sort((a, b) -> Boolean.compare((a instanceof CreeperEntity), b instanceof CreeperEntity));
 
             final Iterator<Entity> entityIt = nearbyHostiles.iterator();
-            final Random rand = new Random();
             do {
                 final Entity entity = entityIt.next();
                 final Vec3d eye = entity.getEyePos();
                 final BlockPos eyeBlock = new BlockPos(eye);
                 final BlockPos tpGoal = eyeBlock.up();
 
-                if (entity instanceof CreeperEntity) {
+                if (entity instanceof CreeperEntity && entity.distanceTo(mod.getPlayer()) <= DefenseConstants.CREEPER_RADIUS) {
                     final CreeperEntity creeper = (CreeperEntity) entity;
                     final float fusingTime = creeper.getClientFuseTime(1);
                     if (Float.compare(fusingTime, 0.75f) >= 0) {
-
+                        chorusTp(mod);
+                        /*MobDefenseChain.safeToEat = false;
                         for (byte dy = 0; dy <= 3; dy++) {
-                            for (byte i = 0; i < 8; i++) {
-                                final float r = 4 + MathHelper.sqrt(rand.nextFloat());
+                            for (byte i = 0; i <= 2; i++) {
+                                final float r = 4 + i;
                                 final float theta = rand.nextFloat() * 2 * MathHelper.PI;
-                                final double x = creeper.getX() + r * MathHelper.cos(theta);
+                                final double x = creeper.getX() + r * MathHelper.cos(theta) * MathHelper.sin(theta);
                                 final double z = creeper.getZ() + r * MathHelper.sin(theta);
-                                final double y = creeper.getY() + dy;
+                                final double y = creeper.getY() + r * MathHelper.cos(theta) * MathHelper.cos(theta);
                                 final BlockPos b = new BlockPos(x, y, z);
                                 if (canTpThere(b, mod)) {
+                                    MobDefenseChain.safeToEat = true;
                                     mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
                                     mod.getPlayer().setVelocity(0d, 0d, 0d);
                                     cancelFall(mod);
@@ -153,7 +175,7 @@ public class TPAura {
                                 }
                             }
                         }
-                        continue;
+                        continue;*/
                     }
                 }
 
@@ -190,7 +212,7 @@ public class TPAura {
         return true;
     }
 
-    private boolean canTpThere(final BlockPos tpGoal, final AltoClef mod) {
+    /*private boolean canTpThere(final BlockPos tpGoal, final AltoClef mod) {
         final BlockPos headGoal = tpGoal.up();
         final BlockState tpState = mod.getWorld().getBlockState(tpGoal);
         if (!tpState.getBlock().equals(Blocks.AIR)) {
@@ -201,26 +223,145 @@ public class TPAura {
             return false;
         }
         for (final ArrowEntity arrow : used) {
-            /*final TraceResult result = BowArrowIntersectionTracer.calculateCollision(arrow, mod.getPlayer().getBoundingBox(),
-                    mod.getPlayer().getVelocity(), 20, 0, new Vec3d(tpGoal.getX() + 0.5, tpGoal.getY(), tpGoal.getZ() + 0.5), mod.getWorld(), SimMovementState.SIM_STAND, null);
-            if (result.willPiercePlayer()) {
-                return false;
-            }*/
-            /*final CollisionFeedback cx = BowArrowIntersectionTracer.calculateCollisionX(arrow, mod.getPlayer().getBoundingBox().expand(0.2f));
-            final CollisionFeedback cz = BowArrowIntersectionTracer.calculateCollisionZ(arrow, mod.getPlayer().getBoundingBox().expand(0.2f));
-            final TraceResult result = BowArrowIntersectionTracer.getTraceResultFromFeedback(cx, cx, cz, arrow, mod.getPlayer().getBoundingBox().expand(0.2f), 0, 20);
-            if (result.willPiercePlayer()) {
-                return false;
-            }*/
-            //System.out.println(targetInSight(new Vec3d(tpGoal.getX() + 0.5, tpGoal.getY(), tpGoal.getZ() + 0.5), arrow));
             if (targetInSight(new Vec3d(tpGoal.getX() + 0.5, tpGoal.getY(), tpGoal.getZ() + 0.5), arrow)) {
                 return false;
             }
         }
         return true;
     }
+    public static boolean canTpThere(final AltoClef mod, final BlockPos tpGoal) {
+        final BlockPos headGoal = tpGoal.up();
+        final BlockState tpState = mod.getWorld().getBlockState(tpGoal);
+        if (!tpState.getBlock().equals(Blocks.AIR)) {
+            return false;
+        }
+        final BlockState headState = mod.getWorld().getBlockState(headGoal);
+        if (!headState.getBlock().equals(Blocks.AIR)) {
+            return false;
+        }
+        return true;
+    }*/
+    public static boolean isSpaceEmpty(final AltoClef mod, final Vec3d target, final boolean isOffset) {
+        final Box box = mod.getPlayer().getBoundingBox();
+        final Box newBox = isOffset ? box.offset(target) : box.offset(mod.getPlayer().getPos().multiply(-1)).offset(target);//new Box(box.minX + x, box.minY + g, box.minZ + z, box.maxX + x, box.maxY + g, box.maxZ + z);
+        return mod.getWorld().isSpaceEmpty(newBox);
+    }
+    public static boolean canTpThere(final AltoClef mod, final Vec3d tpGoal) {
+        if (explodingCreeperAt(mod, tpGoal)) {
+            return false;
+        }
+        if (!isSpaceEmpty(mod, tpGoal, false)) {
+            return false;
+        }
+        return true;
+    }
+    private boolean canTpThere(final Vec3d tpGoal, final AltoClef mod) {
+        if (!canTpThere(mod, tpGoal)) {
+            return false;
+        }
+        for (final ArrowEntity arrow : used) {
+            if (targetInSight(new Vec3d(tpGoal.getX(), tpGoal.getY(), tpGoal.getZ()), arrow)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-    private float distanceTo(Vec3d a, Vec3d b) {
+
+    public static boolean floorTp(final AltoClef mod, final Vec3d newPos) {
+        final ClientPlayerEntity player = mod.getPlayer();
+        //final double x = newPos.getX();
+        //final double y = newPos.getY();
+        //final double z = newPos.getZ();
+        double g = newPos.getY();
+        boolean bl = false;
+        BlockPos blockPos = new BlockPos(newPos);
+        World world = mod.getWorld();
+        if (world.isChunkLoaded(blockPos)) {
+            boolean bl2 = false;
+
+            while(!bl2 && blockPos.getY() > world.getBottomY()) {
+                BlockPos blockPos2 = blockPos.down();
+                BlockState blockState = world.getBlockState(blockPos2);
+                if (blockState.getMaterial().blocksMovement()) {
+                    bl2 = true;
+                } else {
+                    --g;
+                    blockPos = blockPos2;
+                }
+            }
+
+            if (bl2) {
+                //this.requestTeleport(x, g, z);
+                //player.setPos(x, g, z);
+                /*final Box box = player.getBoundingBox();
+                final Box newBox = new Box(box.minX + x, box.minY + g, box.minZ + z, box.maxX + x, box.maxY + g, box.maxZ + z);
+
+                if (world.isSpaceEmpty(newBox)) { // && !world.containsFluid(player.getBoundingBox())) {
+                    System.out.println("place empty");
+                    player.setPos(x, g, z);
+                    bl = true;
+                } else {
+                    System.out.println("place not empty");
+
+                }*/
+                if (isSpaceEmpty(mod, newPos, true)) {
+                    player.setPos(newPos.getX(), g, newPos.getZ());
+                }
+            }
+        }
+
+        return bl;
+    }
+
+    public static boolean chorusTp(final AltoClef mod) {
+        final ClientPlayerEntity user = mod.getPlayer();
+        final World world = mod.getWorld();
+        for(int i = 0; i < 16; ++i) {
+            /*double rx = (user.getRandom().nextDouble() - 0.5) * 12.0;
+            if (Math.abs(rx) < 4) {
+                rx = user.getRandom().nextInt(2) == 0 ? -4 : 4;
+            }
+            double rz = (user.getRandom().nextDouble() - 0.5) * 12.0;
+            if (Math.abs(rz) < 4) {
+                rz = user.getRandom().nextInt(2) == 0 ? -4 : 4;
+            }
+            double g = user.getX() + rx;
+            double h = MathHelper.clamp(user.getY() + (double)(user.getRandom().nextInt(16) - 8), world.getBottomY(), world.getBottomY() + 512 - 1);
+            double j = user.getZ() + rz;*/
+            /*double g = user.getX() + (user.getRandom().nextDouble() - 0.5) * 12.0;
+            double h = MathHelper.clamp(user.getY() + (double)(user.getRandom().nextInt(16) - 8), world.getBottomY(), world.getBottomY() + 512);
+            double j = user.getZ() + (user.getRandom().nextDouble() - 0.5) * 12.0;*/
+
+            final double angle = user.getRandom().nextFloat() * 360;
+            final double r = DefenseConstants.CREEPER_RADIUS; //1.6;// + user.getRandom().nextInt(3);
+            final double g = user.getX() + Math.cos(angle) * r;
+            final double h = MathHelper.clamp(user.getY() + (double)(user.getRandom().nextInt(16) - 8), world.getBottomY(), world.getBottomY() + 512);
+            final double j = user.getZ() + Math.sin(angle) * r;
+
+            /*if (user.hasVehicle()) {
+                user.stopRiding();
+            }*/
+
+            //final BlockPos newPos = new BlockPos(g, h, j);
+            if (floorTp(mod, new Vec3d(g, h, j))) {
+                return true;
+            }
+            /*if (canTpThere(mod, newPos)) {
+                tp(mod, newPos);
+                return true;
+            }*/
+        }
+        return false;
+    }
+
+    public static final void tp(final AltoClef mod, final BlockPos tpGoal) {
+        mod.getPlayer().setVelocity(0d, 0d, 0d);
+        cancelFall(mod);
+        mod.getPlayer().setPos(tpGoal.getX() + 0.5, tpGoal.getY(), tpGoal.getZ() + 0.5);
+    }
+
+    private static float distanceTo(Vec3d a, Vec3d b) {
         float f = (float)(a.getX() - b.getX());
         float g = (float)(a.getY() - b.getY());
         float h = (float)(a.getZ() - b.getZ());

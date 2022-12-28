@@ -26,6 +26,24 @@ public class MobHatV2 {
         east:  pos x
          */
 
+        /*
+                final Box oldBox = entity.getBoundingBox();
+        final Vec3d eye = entity.getEyePos();
+        final BlockPos eyeBlock = new BlockPos(eye);
+        final Vec3d vel = entity.getVelocity();
+        final double dx = Double.compare(Math.abs(vel.getX()), 0d) > 0.03 ? Math.signum(vel.getX()) : 0;
+        //final double dy = Double.compare(Math.abs(vel.getY()), 0) > 0.03 ? Math.signum(vel.getY()) : 0;
+        final double dz = Double.compare(Math.abs(vel.getZ()), 0d) > 0.03 ? Math.signum(vel.getZ()) : 0;
+        final double dMinX = Double.compare(dx, 0d) < 0 ? dx : 0;
+        final double dMaxX = Double.compare(dx, 0d) > 0 ? dx : 0;
+        final double dMinZ = Double.compare(dz, 0d) < 0 ? dz : 0;
+        final double dMaxZ = Double.compare(dz, 0d) > 0 ? dz : 0;
+
+        final Box box = new Box(oldBox.minX + dMinX, oldBox.minY, oldBox.minZ + dMinZ, oldBox.maxX + dMaxX, oldBox.maxY, oldBox.maxZ + dMaxZ);
+
+        final Vec3d minSpan = new Vec3d(box.minX, eye.getY(), box.minZ);
+        final Vec3d maxSpan = new Vec3d(box.maxX, eye.getY(), box.maxZ);
+         */
         final Box box = entity.getBoundingBox();
         final Vec3d eye = entity.getEyePos();
         final BlockPos eyeBlock = new BlockPos(eye);
@@ -78,43 +96,6 @@ public class MobHatV2 {
             around.add(first);
             around.add(second);
         }
-
-        //System.out.println("around.size(): " + around.size());
-        /*around.add(minEdgeNorth);
-        around.add(minEdgeWest);
-        around.add(maxEdgeSouth);
-        around.add(maxEdgeEast);*/
-
-        /*
-        final double xLen = box.getXLength();
-        final double yLen = box.getYLength();
-        final double zLen = box.getZLength();
-
-        final Vec3d cornerNegXNegYNegZ = new Vec3d(box.minX, box.minY, box.minZ);
-        final Vec3d cornerNegXNegYPosZ = new Vec3d(box.minX, box.minY, box.maxZ);
-        final Vec3d cornerNegXPosYNegZ = new Vec3d(box.minX, box.maxY, box.minZ);
-        final Vec3d cornerNegXPosYPosZ = new Vec3d(box.minX, box.maxY, box.maxZ);
-        final Vec3d cornerPosXNegYNegZ = new Vec3d(box.maxX, box.minY, box.minZ);
-        final Vec3d cornerPosXNegYPosZ = new Vec3d(box.maxX, box.minY, box.maxZ);
-        final Vec3d cornerPosXPosYNegZ = new Vec3d(box.maxX, box.maxY, box.minZ);
-        final Vec3d cornerPosXPosYPosZ = new Vec3d(box.maxX, box.maxY, box.maxZ);
-
-        final BlockPos blockNegXNegYNegZ = new BlockPos(cornerNegXNegYNegZ);
-        final BlockPos blockNegXNegYPosZ = new BlockPos(cornerNegXNegYPosZ);
-        final BlockPos blockNegXPosYNegZ = new BlockPos(cornerNegXPosYNegZ);
-        final BlockPos blockNegXPosYPosZ = new BlockPos(cornerNegXPosYPosZ);
-        final BlockPos blockPosXNegYNegZ = new BlockPos(cornerPosXNegYNegZ);
-        final BlockPos blockPosXNegYPosZ = new BlockPos(cornerPosXNegYPosZ);
-        final BlockPos blockPosXPosYNegZ = new BlockPos(cornerPosXPosYNegZ);
-        final BlockPos blockPosXPosYPosZ = new BlockPos(cornerPosXPosYPosZ);*/
-
-        //if (entity instanceof SpiderEntity) return around;
-        /*final BlockPos origPos = entity.getBlockPos().up();
-        if (entity.getWorld().getBlockState(origPos.north()).isAir()) around.add(origPos.north());
-        if (entity.getWorld().getBlockState(origPos.west()).isAir()) around.add(origPos.west());
-        if (entity.getWorld().getBlockState(origPos.east()).isAir()) around.add(origPos.east());
-        if (entity.getWorld().getBlockState(origPos.south()).isAir()) around.add(origPos.south());
-        if (entity.getWorld().getBlockState(origPos.up()).isAir()) around.add(origPos.up());*/
         return around;
     }
 

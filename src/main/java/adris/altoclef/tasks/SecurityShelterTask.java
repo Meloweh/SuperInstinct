@@ -10,12 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import java.util.LinkedList;
 import java.util.List;
 
-public class SecurityShelterTask extends Task {
-    private boolean finished;
-    @Override
-    protected void onStart(AltoClef mod) {
-        finished = false;
-    }
+public class SecurityShelterTask {
 
     private static List<BlockPos> getAround(final AltoClef mod) {
         final BlockPos playerPos = mod.getPlayer().getBlockPos().up();
@@ -32,53 +27,23 @@ public class SecurityShelterTask extends Task {
         return around;
     }
 
-    @Override
-    protected Task onTick(AltoClef mod) {
+    public static boolean attemptShelter(AltoClef mod) {
         final List<BlockPos> around = getAround(mod);
-        finished = around.size() < 1 || mod.getItemStorage().getBlockCount() < around.size();
-        System.out.println(finished + " " + around.size());
-        if (finished) return null;
-        /*if (mod.getItemStorage().getBlockTypes().size() < 1) {
-            finished = true;
-            return null;
-        }*/
-
-        //finished = true;
+        if (/*around.size() < 1 || */mod.getItemStorage().getBlockCount() < around.size()) {
+            return false;
+        }
         for (final BlockPos pos : around) {
             final BlockState state = mod.getWorld().getBlockState(pos);
             if (state.isAir()) {
-                //finished = false;
                 BasicDefenseManager.fill(mod, pos);
             }
         }
-        return null;
+        return true;
     }
-
-    public static boolean hasEnoughBlocks(final AltoClef mod) {
+    public static boolean canAttemptShelter(final AltoClef mod) {
         return mod.getItemStorage().getBlockTypes().size() >= getAround(mod).size();
     }
-
     public static boolean isFilled(final AltoClef mod) {
         return getAround(mod).size() == 0;
-    }
-
-    @Override
-    protected void onStop(AltoClef mod, Task interruptTask) {
-        finished = true;
-    }
-
-    @Override
-    protected boolean isEqual(Task other) {
-        return this instanceof SecurityShelterTask;
-    }
-
-    @Override
-    public boolean isFinished(AltoClef mod) {
-        return finished;
-    }
-
-    @Override
-    protected String toDebugString() {
-        return this.getClass().getCanonicalName();
     }
 }

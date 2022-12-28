@@ -6,6 +6,7 @@ import adris.altoclef.control.KillAura;
 import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
 import adris.altoclef.tasks.SecurityShelterTask;
+import adris.altoclef.tasks.defense.DefenseConstants;
 import adris.altoclef.tasks.defense.MobHat;
 import adris.altoclef.tasks.defense.MobHatV2;
 import adris.altoclef.tasks.defense.TPAura;
@@ -24,6 +25,8 @@ import baritone.Baritone;
 import baritone.api.utils.input.Input;
 import net.minecraft.block.AbstractFireBlock;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.WitherEntity;
@@ -32,6 +35,7 @@ import net.minecraft.entity.mob.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.entity.projectile.FireballEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -42,6 +46,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MobDefenseChain extends SingleTaskChain {
     private static final double DANGER_KEEP_DISTANCE = 30;
@@ -60,8 +65,7 @@ public class MobDefenseChain extends SingleTaskChain {
     private float _cachedLastPriority;
     private BasicDefenseManager basicDefenseManager = new BasicDefenseManager();
     private boolean attacking = false;
-    private static boolean safeToEat = true;
-    private Optional<SecurityShelterTask> optShelterTask = Optional.empty();
+    public static boolean safeToEat = true;
     private boolean shelterMode = false;
     private IdleTask idleTask = new IdleTask();
     private Optional<GetToXZTask> optXZTask = Optional.empty();
@@ -85,7 +89,7 @@ public class MobDefenseChain extends SingleTaskChain {
     }
 
     public static boolean safeToEat() {
-        System.out.println("safeToEat: " + safeToEat);
+        //System.out.println("safeToEat: " + safeToEat);
         return safeToEat;
     }
 
@@ -165,24 +169,49 @@ public class MobDefenseChain extends SingleTaskChain {
         //if (mod.getTaskRunner().getCurrentTaskChain() != null && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null)
         //    System.out.println(mod.getTaskRunner().getCurrentTaskChain().getTasks().size());
         _doingFunkyStuff = false;
-        // Run away from creepers
-        Optional<CreeperEntity> blowingUp = getClosestFusingCreeper(mod);
-        if (blowingUp.isPresent()) {
-            /*if (attacking) {
-                if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
-                    _runAwayTask = new RunAwayFromCreepersTask(CREEPER_KEEP_DISTANCE);
-                    //setTask(_runAwayTask);
-                    //return _cachedLastPriority;
+
+        if (mod.getPlayer().getHealth() < 7 && SecurityShelterTask.canAttemptShelter(mod)) {
+            if (mod.getFoodChain().hasFood()) {
+                final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()
+                        .filter(e -> e.distanceTo(mod.getPlayer()) <= 15
+                                //&& !(e instanceof SkeletonEntity)
+                                //&& !(e instanceof CreeperEntity)
+                                && !(e instanceof ProjectileEntity))
+                        .collect(Collectors.toList());
+                final List<Entity> veryCloseHostiles = mod.getEntityTracker().getHostiles().stream()
+                        .filter(e -> e.distanceTo(mod.getPlayer()) < 3
+                                //&& !(e instanceof SkeletonEntity)
+                                //&& !(e instanceof CreeperEntity)
+                                && !(e instanceof ProjectileEntity))
+                        .collect(Collectors.toList());
+
+                final boolean isFilled = SecurityShelterTask.isFilled(mod);
+                safeToEat = isFilled;
+                if (!isFilled) {
+                    if (veryCloseHostiles.size() > 0) {
+                        final BlockPos overPlayer = new BlockPos(mod.getPlayer().getEyePos()).up().up();
+                        if (mod.getPlayer().isOnGround() && TPAura.canTpThere(mod, overPlayer)) {
+                            TPAura.tp(mod, overPlayer);
+                        } else {
+                            // hit 'em
+                        }
+                    }
+                    SecurityShelterTask.attemptShelter(mod);
+                } else {
 
                 }
-                attacking = false;
-            }*/
-            /*if (getCurrentTask() instanceof KillEntitiesTask) {
-                getCurrentTask().
-            }*/
+            }
+        } else {
+            safeToEat = true;
+        }
+
+
+        // Run away from creepers
+        /*Optional<CreeperEntity> blowingUp = getClosestFusingCreeper(mod);
+        if (blowingUp.isPresent()) {
             //System.out.println("creeper: " + blowingUp.get().getClientFuseTime(1));
             safeToEat = false;//mod.getClientBaritone().getBuilderProcess()
-            if (/*!mod.getFoodChain().needsToEat() &&*/(mod.getItemStorage().hasItem(Items.SHIELD) ||
+            if ((mod.getItemStorage().hasItem(Items.SHIELD) ||
                     mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
                     !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null &&
                     mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
@@ -207,7 +236,7 @@ public class MobDefenseChain extends SingleTaskChain {
                 stopShielding(mod);
                 safeToEat = true;
             }
-        }
+        }*/
         basicDefenseManager.onTick(mod);
         if (!tpAura.attemptAura(mod)) {
             if (!mobHat.attemptHat(mod)) {
