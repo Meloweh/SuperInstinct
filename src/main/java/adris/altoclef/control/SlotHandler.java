@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 
 public class SlotHandler {
@@ -116,7 +117,7 @@ public class SlotHandler {
     }
 
     public boolean equipBlock() {
-        final List<Item> blocks = _mod.getItemStorage().getBlockTypes();
+        final List<Item> blocks = _mod.getItemStorage().getBlockTypes().stream().filter(e -> !e.isFood()).collect(Collectors.toList());
         if (blocks.size() < 1) return false;
         return forceEquipItem(blocks.get(0));
     }

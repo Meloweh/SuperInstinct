@@ -169,7 +169,6 @@ public class MobDefenseChain extends SingleTaskChain {
         //if (mod.getTaskRunner().getCurrentTaskChain() != null && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null)
         //    System.out.println(mod.getTaskRunner().getCurrentTaskChain().getTasks().size());
         _doingFunkyStuff = false;
-
         if (mod.getPlayer().getHealth() < 7 && SecurityShelterTask.canAttemptShelter(mod)) {
             if (mod.getFoodChain().hasFood()) {
                 final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()
@@ -203,7 +202,20 @@ public class MobDefenseChain extends SingleTaskChain {
                 }
             }
         } else {
-            safeToEat = true;
+            final List<PhantomEntity> stupidPhantoms = mod.getEntityTracker().getTrackedEntities(PhantomEntity.class).stream()
+                    .filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList());
+            if (stupidPhantoms.size() < 1) {
+                safeToEat = true;
+            } else {
+                final PhantomEntity entity = stupidPhantoms.get(0);
+                KillEntityTask.equipWeapon(mod);
+                float hitProg = mod.getPlayer().getAttackCooldownProgress(0);
+                if (hitProg >= 1) {
+                    LookHelper.lookAt(mod, entity.getEyePos());
+                    mod.getControllerExtras().attack(entity);
+                }
+            }
+
         }
 
 

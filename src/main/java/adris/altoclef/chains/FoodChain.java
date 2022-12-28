@@ -112,6 +112,10 @@ public class FoodChain extends SingleTaskChain {
 
     @Override
     public float getPriority(AltoClef mod) {
+        if (!AltoClef.inGame()) {
+            stopEat(mod);
+            return Float.NEGATIVE_INFINITY;
+        }
         if (WorldHelper.isInNetherPortal(mod)) {
             stopEat(mod);
             return Float.NEGATIVE_INFINITY;
@@ -127,12 +131,6 @@ public class FoodChain extends SingleTaskChain {
                 return Float.NEGATIVE_INFINITY;
             }
         }
-
-        if (!AltoClef.inGame()) {
-            stopEat(mod);
-            return Float.NEGATIVE_INFINITY;
-        }
-
         if (!mod.getModSettings().isAutoEat()) {
             stopEat(mod);
             return Float.NEGATIVE_INFINITY;

@@ -14,11 +14,13 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
+import net.minecraft.entity.mob.PhantomEntity;
 import net.minecraft.entity.mob.SkeletonEntity;
 import net.minecraft.entity.passive.FoxEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -37,7 +39,7 @@ import java.util.stream.Collectors;
 public class TPAura {
     private boolean attacking = false;
     private MobHatV2 mobHat = new MobHatV2();
-    private List<ArrowEntity> used = new LinkedList<>();
+    private List<Entity> used = new LinkedList<>();
     //private Optional<SkeletonEntity> recentSource = Optional.empty();
     private Optional<BlockPos> prev = Optional.empty();
     private final static Random rand = new Random();
@@ -109,10 +111,12 @@ public class TPAura {
             }
             return result;
         });
-        used.removeIf(e -> e == null || e.isRegionUnloaded() || e.horizontalCollision || e.verticalCollision || e.distanceTo(mod.getPlayer()) > 70);
+        used.removeIf(e -> e == null || e.isRegionUnloaded() || e.horizontalCollision || e.verticalCollision || e.isOnGround() || e.distanceTo(mod.getPlayer()) > 70);
         final List<ArrowEntity> arrows = mod.getEntityTracker().getTrackedEntities(ArrowEntity.class).stream()
                 .filter(e -> (int)Math.ceil(distanceTo(e.getPos(), mod.getPlayer().getPos())) < DefenseConstants.TP_RADIUS && !e.horizontalCollision && !e.verticalCollision && !used.contains(e))
                 .collect(Collectors.toList());
+        final List<WitherSkullEntity> skulls = mod.getEntityTracker().getTrackedEntities(WitherSkullEntity.class)
+                .stream().filter(e -> (int)Math.ceil(distanceTo(e.getPos(), mod.getPlayer().getPos())) < DefenseConstants.WHITHER_SKULL_DISTANCE).collect(Collectors.toList());
         /*arrows.forEach(e -> {
             if (e.horizontalCollision || e.verticalCollision) {
                 used.add(e);
@@ -130,7 +134,13 @@ public class TPAura {
         }
 
         boolean tryAttack = true;
-        if (arrows.size() > 0) {
+        if (tryAttack && skulls.size() > 0) {
+            if (chorusTp(mod, false, 64)) {
+                used.addAll(skulls);
+                tryAttack = false;
+            }
+        }
+        if (tryAttack && arrows.size() > 0) {
             //System.out.println("arrows.size() > 0");
             final ArrowEntity arrow = arrows.get(0);
             final Vec3d vecProj = arrow.getPos();
@@ -282,7 +292,7 @@ public class TPAura {
         /*if (!canTpThere(mod, tpGoal)) {
             return false;
         }*/
-        for (final ArrowEntity arrow : used) {
+        for (final Entity arrow : used) {
             if (targetInSight(new Vec3d(tpGoal.getX(), tpGoal.getY(), tpGoal.getZ()), arrow)) {
                 return false;
             }
@@ -341,9 +351,13 @@ public class TPAura {
     }
 
     public static boolean chorusTp(final AltoClef mod, final boolean struggling) {
+        return chorusTp(mod, struggling, 16);
+    }
+
+    public static boolean chorusTp(final AltoClef mod, final boolean struggling, int attempts) {
         final ClientPlayerEntity user = mod.getPlayer();
         final World world = mod.getWorld();
-        for(int i = 0; i < 16; ++i) {
+        for(int i = 0; i < attempts; ++i) {
             /*double rx = (user.getRandom().nextDouble() - 0.5) * 12.0;
             if (Math.abs(rx) < 4) {
                 rx = user.getRandom().nextInt(2) == 0 ? -4 : 4;
