@@ -7,6 +7,7 @@ import adris.altoclef.tasks.ArrowMapTests.CollisionFeedback;
 import adris.altoclef.tasks.ArrowMapTests.SimMovementState;
 import adris.altoclef.tasks.ArrowMapTests.TraceResult;
 import adris.altoclef.tasks.entity.KillEntityTask;
+import adris.altoclef.util.MovementCounter;
 import adris.altoclef.util.helpers.LookHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -343,6 +344,7 @@ public class TPAura {
                 }*/
                 if (isSpaceEmpty(mod, newPos, true)) {
                     player.setPos(newPos.getX(), g, newPos.getZ());
+                    MovementCounter.tpMovements++;
                 }
             }
         }
@@ -415,6 +417,7 @@ public class TPAura {
         mod.getPlayer().setVelocity(0d, 0d, 0d);
         cancelFall(mod);
         mod.getPlayer().setPos(tpGoal.getX(), tpGoal.getY(), tpGoal.getZ());
+        MovementCounter.tpMovements++;
     }
 
     private static float distanceTo(Vec3d a, Vec3d b) {

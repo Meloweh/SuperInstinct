@@ -4,6 +4,7 @@
  */
 package adris.altoclef.tasks.ArrowMapTests;
 
+import adris.altoclef.util.MovementCounter;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.client.MinecraftClient;
@@ -46,6 +47,7 @@ public class MeteorClientPlace {
         }
 
         mc.player.input.sneaking = wasSneaking;
+        MovementCounter.fillMovements++;
     }
 
     public static boolean canPlace(BlockPos blockPos, boolean checkEntities) {

@@ -203,8 +203,11 @@ public class Playground {
             case "stacked2":
                 mod.runUserTask(new EquipArmorTask(Items.DIAMOND_CHESTPLATE));
                 break;
-            case "vclip":
-                //TPAura.tp(mod, mod.getPlayer().getBlockPos().up().up().up());
+            case "uvclip":
+                TPAura.tp(mod, mod.getPlayer().getPos().add(0, 3, 0));
+                break;
+            case "dvclip":
+                TPAura.tp(mod, mod.getPlayer().getPos().add(0, -3, 0));
                 break;
             case "ravage":
                 mod.runUserTask(new RavageRuinedPortalsTask());
@@ -219,7 +222,7 @@ public class Playground {
                 System.out.println(mod.getItemStorage().isFullyCapableToCraft(mod, Items.IRON_CHESTPLATE));
                 break;
             case "chorus":
-                TPAura.chorusTp(mod, false);
+                TPAura.chorusTp(mod, true);
                 break;
             case "box":
                 System.out.println(mod.getPlayer().getBoundingBox().toString());

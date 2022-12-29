@@ -16,6 +16,7 @@ import adris.altoclef.tasks.movement.*;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.tasksystem.TaskRunner;
+import adris.altoclef.util.MovementCounter;
 import adris.altoclef.util.baritone.CachedProjectile;
 import adris.altoclef.util.helpers.*;
 import adris.altoclef.util.slots.PlayerSlot;
@@ -165,6 +166,16 @@ public class MobDefenseChain extends SingleTaskChain {
 
         // Pause if we're not loaded into a world.
         if (!AltoClef.inGame()) return Float.NEGATIVE_INFINITY;
+        if (MovementCounter.fillMovements > 3 || MovementCounter.tpMovements > 3) {
+            Debug.logMessage("fillMovements: " + MovementCounter.fillMovements);
+            Debug.logMessage("tpMovements: " + MovementCounter.tpMovements);
+            System.out.println("fillMovements: " + MovementCounter.fillMovements);
+            System.out.println("tpMovements: " + MovementCounter.tpMovements);
+            MovementCounter.fillMovements = 0;
+            MovementCounter.tpMovements = 0;
+
+        }
+
         //System.out.println(mod.getWorld().getRegistryKey().getValue().getPath());
         //if (mod.getTaskRunner().getCurrentTaskChain() != null && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null)
         //    System.out.println(mod.getTaskRunner().getCurrentTaskChain().getTasks().size());
@@ -276,7 +287,6 @@ public class MobDefenseChain extends SingleTaskChain {
         /*if (tpAura.isAttacking()) {
             return 70;
         }*/
-
         return 0;
     }
 
