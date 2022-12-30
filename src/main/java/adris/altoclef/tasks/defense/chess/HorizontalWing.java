@@ -9,6 +9,7 @@ import net.minecraft.world.World;
 
 import java.util.*;
 
+//TODO: diagonal tp with 4 block radius
 public class HorizontalWing {
     /*final Pair<List<BlockPos>, List<BlockPos>> wing;
     final BlockPos parting;*/
@@ -54,8 +55,6 @@ public class HorizontalWing {
         }
         return centeredStart;
     }
-    //TODO: FIXME: if block directly above player, uppadding tolerance is not given.
-    //TODO: Sidepadding for better tp ensurance as shoved in onenote
     private HorizontalWing(final World world, final BlockPos start, final Direction dir, final boolean isParting, final int distance, final boolean aboveHeadBlocked) {
         final List<Wing2D> line = new LinkedList<>();
         this.founding = Optional.empty();
@@ -80,6 +79,21 @@ public class HorizontalWing {
             if (isParting && i > 0 && !wing.hasFailed()/*(line.size() - 1 != i || !wing.hasFailed())*/) {
                 //System.out.println("doing curve: i = " + i);
                 //final Direction rotatedDir = rotateXZ(dir, 1);
+                final Stack<Direction> stack = new Stack<>();
+                stack.push(rotateXZ(dir, 1));
+                stack.push(rotateXZ(dir.getOpposite(), 1));
+                Collections.shuffle(stack);
+
+                while (!stack.empty()) {
+                    final HorizontalWing leftOrRightWing = new HorizontalWing(world, wing.getFeet(), stack.pop(), false, distance-i, aboveHeadBlocked);
+                    this.founding = leftOrRightWing.getFounding();
+                    if (this.founding.isPresent()) {
+                        this.paddedStart = calculatePaddedPos(start, this.founding.get(), dir);
+                        return;
+                    }
+                }
+
+                /*
                 final HorizontalWing hWingLeft = new HorizontalWing(world, wing.getFeet(), rotateXZ(dir, 1), false, distance-i, aboveHeadBlocked);
                 this.founding = hWingLeft.getFounding();
                 if (this.founding.isPresent()) {
@@ -91,7 +105,7 @@ public class HorizontalWing {
                 if (this.founding.isPresent()) {
                     this.paddedStart = calculatePaddedPos(start, this.founding.get(), dir);
                     return;
-                }
+                }*/
             }
             final VerticalWing vWing = new VerticalWing(world, wing.getFeet().offset(Direction.DOWN, Consts.MAX_DESCEND), wing.getFeet().offset(Direction.UP, Consts.MAX_ASCEND));
             //this.failed = hWing.hasFailed();

@@ -12,7 +12,7 @@ import adris.altoclef.tasks.construction.compound.ConstructNetherPortalObsidianT
 import adris.altoclef.tasks.container.SmeltInFurnaceTask;
 import adris.altoclef.tasks.container.StoreInAnyContainerTask;
 import adris.altoclef.tasks.defense.TPAura;
-import adris.altoclef.tasks.defense.chess.Horse;
+import adris.altoclef.tasks.defense.chess.Queen;
 import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.tasks.examples.ExampleTask2;
 import adris.altoclef.tasks.misc.EquipArmorTask;
@@ -214,8 +214,8 @@ public class Playground {
                     System.out.println("hit: " + vec.get().toString());
                 }
                 break;
-            case "horse":
-                Optional<BlockPos> pos = Horse.nextJump(mod);
+            case "queen":
+                Optional<BlockPos> pos = Queen.nextJump(mod);
                 if (pos.isEmpty()) {
                     System.out.println("pos empty");
                 } else {
