@@ -12,6 +12,7 @@ import adris.altoclef.tasks.construction.compound.ConstructNetherPortalObsidianT
 import adris.altoclef.tasks.container.SmeltInFurnaceTask;
 import adris.altoclef.tasks.container.StoreInAnyContainerTask;
 import adris.altoclef.tasks.defense.TPAura;
+import adris.altoclef.tasks.defense.chess.Horse;
 import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.tasks.examples.ExampleTask2;
 import adris.altoclef.tasks.misc.EquipArmorTask;
@@ -31,38 +32,30 @@ import adris.altoclef.tasks.stupid.ReplaceBlocksTask;
 import adris.altoclef.tasks.stupid.SCP173Task;
 import adris.altoclef.tasks.stupid.TerminatorTask;
 import adris.altoclef.util.*;
+import adris.altoclef.util.helpers.BlockPosHelper;
 import adris.altoclef.util.helpers.LookHelper;
 import adris.altoclef.util.helpers.WorldHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.SkeletonEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-import net.minecraft.resource.Resource;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.math.*;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.BlockStateRaycastContext;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.world.chunk.EmptyChunk;
 import org.apache.commons.io.IOUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 /**
  * For testing.
@@ -202,6 +195,32 @@ public class Playground {
                 break;
             case "stacked2":
                 mod.runUserTask(new EquipArmorTask(Items.DIAMOND_CHESTPLATE));
+                break;
+            case "cast":
+                BlockPos curr = mod.getPlayer().getBlockPos();
+                BlockPos goal = curr.offset(Direction.NORTH, 10);
+                System.out.println("curr: " + curr.toString());
+                System.out.println("goal: " + goal.toString());
+                Box box1 = mod.getPlayer().getBoundingBox();
+                Box box2 = box1.offset(box1.getCenter().multiply(-1)).offset(curr);
+                System.out.println("offset to: " + box2.getCenter().toString());
+                Optional<Vec3d> vec = mod.getPlayer().getBoundingBox().raycast(BlockPosHelper.toVec3dCenter(curr), BlockPosHelper.toVec3dCenter(goal));//box2.raycast(BlockPosHelper.toVec3dCenter(curr), BlockPosHelper.toVec3dCenter(goal));
+
+                if (vec.isEmpty()) {
+                    System.out.println("vec empty");
+                } else {
+                    double dist = vec.get().distanceTo(BlockPosHelper.toVec3dCenter(goal));
+                    System.out.println("dist: " + dist);
+                    System.out.println("hit: " + vec.get().toString());
+                }
+                break;
+            case "horse":
+                Optional<BlockPos> pos = Horse.nextJump(mod);
+                if (pos.isEmpty()) {
+                    System.out.println("pos empty");
+                } else {
+                    TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pos.get()));
+                }
                 break;
             case "uvclip":
                 TPAura.tp(mod, mod.getPlayer().getPos().add(0, 3, 0));
