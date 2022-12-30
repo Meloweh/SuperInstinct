@@ -219,6 +219,7 @@ public class Playground {
                 if (pos.isEmpty()) {
                     System.out.println("pos empty");
                 } else {
+                    System.out.println("candidate at " + BlockPosHelper.toVec3dCenter(pos.get()).toString());
                     TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pos.get()));
                 }
                 break;
