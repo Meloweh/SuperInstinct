@@ -223,6 +223,15 @@ public class Playground {
                     TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pos.get()));
                 }
                 break;
+            case "floorqueen":
+                Optional<BlockPos> pos2 = Queen.nextJump(mod, true);
+                if (pos2.isEmpty()) {
+                    System.out.println("pos empty");
+                } else {
+                    System.out.println("candidate at " + BlockPosHelper.toVec3dCenter(pos2.get()).toString());
+                    TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pos2.get()));
+                }
+                break;
             case "uvclip":
                 TPAura.tp(mod, mod.getPlayer().getPos().add(0, 3, 0));
                 break;

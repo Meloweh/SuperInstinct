@@ -8,7 +8,7 @@ import net.minecraft.util.math.Direction;
 import java.util.*;
 
 public class Queen {
-    public static Optional<BlockPos> nextJump(final AltoClef mod) {
+    public static Optional<BlockPos> nextJump(final AltoClef mod, final boolean floorRequired) {
         final Stack<Direction> stack = new Stack<>();
         stack.push(Direction.NORTH);
         stack.push(Direction.EAST);
@@ -17,7 +17,7 @@ public class Queen {
         Collections.shuffle(stack);
         final boolean aboveHeadBlocked = !mod.getWorld().getBlockState(mod.getPlayer().getBlockPos().up().up()).getBlock().equals(Blocks.AIR);
         while (!stack.empty()) {
-            final HorizontalWing wing = new HorizontalWing(mod.getWorld(), mod.getPlayer().getBlockPos(), stack.pop(), aboveHeadBlocked);
+            final HorizontalWing wing = new HorizontalWing(mod.getWorld(), mod.getPlayer().getBlockPos(), stack.pop(), aboveHeadBlocked, floorRequired);
             if (wing.getFounding().isPresent()) {
                 return wing.getFounding();
             }
@@ -39,5 +39,8 @@ public class Queen {
             return west.getFounding();
         }*/
         return Optional.empty();
+    }
+    public static Optional<BlockPos> nextJump(final AltoClef mod) {
+        return nextJump(mod, false);
     }
 }

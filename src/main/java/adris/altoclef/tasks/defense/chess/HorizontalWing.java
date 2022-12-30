@@ -10,6 +10,7 @@ import net.minecraft.world.World;
 import java.util.*;
 
 //TODO: diagonal tp with 4 block radius
+//FIXME: First horizontal wing must have at least the same length of the second wing
 public class HorizontalWing {
     /*final Pair<List<BlockPos>, List<BlockPos>> wing;
     final BlockPos parting;*/
@@ -26,8 +27,8 @@ public class HorizontalWing {
         }
         return newDir;
     }
-    public HorizontalWing(final World world, final BlockPos start, final Direction dir, final boolean aboveHeadBlocked) {
-        this(world, start, dir, true, Consts.MAX_ABSOLUTE_DISTANCE, aboveHeadBlocked);
+    public HorizontalWing(final World world, final BlockPos start, final Direction dir, final boolean aboveHeadBlocked, final boolean floorRequired) {
+        this(world, start, dir, true, Consts.MAX_ABSOLUTE_DISTANCE, aboveHeadBlocked, floorRequired);
     }
     private Vec3d calculatePaddedPos(final BlockPos start, final BlockPos end, final Direction dir) {
         final Vec3d centeredStart = BlockPosHelper.toVec3dCenter(start);
@@ -55,7 +56,7 @@ public class HorizontalWing {
         }
         return centeredStart;
     }
-    private HorizontalWing(final World world, final BlockPos start, final Direction dir, final boolean isParting, final int distance, final boolean aboveHeadBlocked) {
+    private HorizontalWing(final World world, final BlockPos start, final Direction dir, final boolean isParting, final int distance, final boolean aboveHeadBlocked, final boolean floorRequired) {
         final List<Wing2D> line = new LinkedList<>();
         this.founding = Optional.empty();
         //this.failed = true;
@@ -85,7 +86,7 @@ public class HorizontalWing {
                 Collections.shuffle(stack);
 
                 while (!stack.empty()) {
-                    final HorizontalWing leftOrRightWing = new HorizontalWing(world, wing.getFeet(), stack.pop(), false, distance-i, aboveHeadBlocked);
+                    final HorizontalWing leftOrRightWing = new HorizontalWing(world, wing.getFeet(), stack.pop(), false, i, aboveHeadBlocked, floorRequired);
                     this.founding = leftOrRightWing.getFounding();
                     if (this.founding.isPresent()) {
                         this.paddedStart = calculatePaddedPos(start, this.founding.get(), dir);
@@ -107,7 +108,7 @@ public class HorizontalWing {
                     return;
                 }*/
             }
-            final VerticalWing vWing = new VerticalWing(world, wing.getFeet().offset(Direction.DOWN, Consts.MAX_DESCEND), wing.getFeet().offset(Direction.UP, Consts.MAX_ASCEND));
+            final VerticalWing vWing = new VerticalWing(world, wing.getFeet().offset(Direction.DOWN, Consts.MAX_DESCEND), wing.getFeet().offset(Direction.UP, Consts.MAX_ASCEND), floorRequired);
             //this.failed = hWing.hasFailed();
             this.founding = vWing.getFounding();
             if (this.founding.isPresent()) {
