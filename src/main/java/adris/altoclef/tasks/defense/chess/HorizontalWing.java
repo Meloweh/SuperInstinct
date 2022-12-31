@@ -30,7 +30,7 @@ public class HorizontalWing {
         return newDir;
     }
     public HorizontalWing(final World world, final BlockPos start, final Direction dir, final boolean aboveHeadBlocked, final boolean floorRequired) {
-        this(world, start, dir, true, Consts.MAX_ABSOLUTE_DISTANCE, aboveHeadBlocked, floorRequired);
+        this(world, start, dir, true, Consts.MAX_ABSOLUTE_DISTANCE, aboveHeadBlocked, floorRequired, 0);
     }
     private Vec3d calculatePaddedPos(final BlockPos start, final BlockPos end, final Direction dir) {
         final Vec3d centeredStart = BlockPosHelper.toVec3dCenter(start);
@@ -58,7 +58,7 @@ public class HorizontalWing {
         }
         return centeredStart;
     }
-    private HorizontalWing(final World world, final BlockPos start, final Direction dir, final boolean isParting, final int distance, final boolean aboveHeadBlocked, final boolean floorRequired) {
+    private HorizontalWing(final World world, final BlockPos start, final Direction dir, final boolean isParting, final int distance, final boolean aboveHeadBlocked, final boolean floorRequired, final int partingDistanceUsage) {
         final List<Wing2D> line = new LinkedList<>();
         this.founding = Optional.empty();
         //this.failed = true;
@@ -96,7 +96,7 @@ public class HorizontalWing {
                 int deltaDist = Math.min(j, i); //i <= distance ? i : distance;//i < line.size()-i ? i : line.size()-i;//!isParting ? (i < distance / 2 ? ) : (i < line.size())
                 //System.out.println("size " + (line.size()) + " i " + i + " --- " + (line.size() - i) + " delta " + deltaDist );
                 while (!stack.empty()) {
-                    final HorizontalWing leftOrRightWing = new HorizontalWing(world, wing.getFeet(), stack.pop(), false, deltaDist, aboveHeadBlocked, floorRequired);
+                    final HorizontalWing leftOrRightWing = new HorizontalWing(world, wing.getFeet(), stack.pop(), false, deltaDist, aboveHeadBlocked, floorRequired, i);
                     this.founding = leftOrRightWing.getFounding();
                     if (this.founding.isPresent()) {
                         this.paddedStart = calculatePaddedPos(start, this.founding.get(), dir);
@@ -119,8 +119,8 @@ public class HorizontalWing {
                 }*/
             }
 
-            final int dim2D = distance * i;
-            int masssummeDifferenz = Consts.MAX_ABSOLUTE_DISTANCE - (distance + i);
+            final int dim2D = partingDistanceUsage * i;
+            int masssummeDifferenz = Consts.MAX_ABSOLUTE_DISTANCE - (partingDistanceUsage + i);
             System.out.println("masssummeDifferenz: " + masssummeDifferenz);
             if (masssummeDifferenz < 0) masssummeDifferenz = 0;
             int remainingScendingDist = dim2D < 1 ? 0 : Consts.MAX_PASSABLE_VOLUME / dim2D;
