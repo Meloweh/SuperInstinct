@@ -128,7 +128,7 @@ public class HorizontalWing {
             if (masssummeDifferenz < 0) masssummeDifferenz = 0;
             int remainingScendingDist = dim2D < 1 ? 0 : Consts.MAX_PASSABLE_VOLUME / dim2D;
             int remainingAscendingDist = Math.min(masssummeDifferenz, dim2D < 1 ? Consts.MAX_ASCEND : Math.min(remainingScendingDist, Consts.MAX_ASCEND )); //remainingScendingDist < Consts.MAX_ASCEND ? remainingScendingDist : Consts.MAX_ASCEND;
-            int remainingDescendingDist = Math.min(masssummeDifferenz, partingDistanceUsage + i >= 11 ?
+            int remainingDescendingDist = Math.min(masssummeDifferenz, partingDistanceUsage + i >= 10 ?
                     0
                     :
                     dim2D < 1 ? Consts.MAX_DESCEND : Math.min(remainingScendingDist, Consts.MAX_DESCEND));//remainingScendingDist < Consts.MAX_DESCEND ? remainingScendingDist : Consts.MAX_DESCEND;
