@@ -9,8 +9,10 @@ import net.minecraft.world.World;
 
 import java.util.*;
 
-//TODO: diagonal tp with 4 block radius
-//FIXME: First horizontal wing must have at least the same length of the second wing
+//TODO: diagonal tp with 4 block radius DONE
+//FIXME: First horizontal wing must have at least the same length of the second wing DONE
+//FIXME: Total cubic meters of a jump has to be limited to 256 blocks total
+//FIXME: Descend on horizontal straight line max is 11
 public class HorizontalWing {
     /*final Pair<List<BlockPos>, List<BlockPos>> wing;
     final BlockPos parting;*/
@@ -62,8 +64,10 @@ public class HorizontalWing {
         //this.failed = true;
         final BlockPos goal = start.offset(dir, distance);
         //boolean alreadyElevated = false;
-        for (BlockPos it = start.offset(dir, 1); !it.equals(goal); it = it.offset(dir, 1)) {
-            final Wing2D wing2D = new Wing2D(world, it, aboveHeadBlocked);
+        boolean prevElevated = false;
+        for (BlockPos it = start/*.offset(dir, 1)*/; !it.equals(goal); it = it.offset(dir, 1)) {
+            final Wing2D wing2D = new Wing2D(world, it, aboveHeadBlocked, prevElevated);
+            prevElevated = wing2D.isElevated();
             if (wing2D.hasFailed()) {
                 if (isParting) {
                     line.add(wing2D);
@@ -75,18 +79,24 @@ public class HorizontalWing {
         }
         System.out.println("line size: " + line.size());
         //Collections.reverse(line);
-        for (int i = line.size() - 1; i >= 0; i--) {
+        //final int remaining = distance - line.size() - 1 <= 0 ? 0 : distance - line.size() - 1;
+        for (int i = line.size() - 1; i > 0; i--) {
+        //for (int i = 0; i < line.size(); i++) {
             final Wing2D wing = line.get(i);
-            if (isParting && i > 0 && !wing.hasFailed()/*(line.size() - 1 != i || !wing.hasFailed())*/) {
+            //if (remaining > i)
+            //final int deltaDist = Math.min(i, line.size() - i - 1);//i < line.size() / 2 ? i : line.size() - 1 - i;//distance-i < i ? distance-i : i; //FIXME: +1?
+            if (isParting && i < line.size() - 1 && !wing.hasFailed()/*(line.size() - 1 != i || !wing.hasFailed())*/) {
                 //System.out.println("doing curve: i = " + i);
                 //final Direction rotatedDir = rotateXZ(dir, 1);
                 final Stack<Direction> stack = new Stack<>();
                 stack.push(rotateXZ(dir, 1));
                 stack.push(rotateXZ(dir.getOpposite(), 1));
                 Collections.shuffle(stack);
-
+                final int j = Consts.MAX_ABSOLUTE_DISTANCE - i;
+                int deltaDist = Math.min(j, i); //i <= distance ? i : distance;//i < line.size()-i ? i : line.size()-i;//!isParting ? (i < distance / 2 ? ) : (i < line.size())
+                //System.out.println("size " + (line.size()) + " i " + i + " --- " + (line.size() - i) + " delta " + deltaDist );
                 while (!stack.empty()) {
-                    final HorizontalWing leftOrRightWing = new HorizontalWing(world, wing.getFeet(), stack.pop(), false, i, aboveHeadBlocked, floorRequired);
+                    final HorizontalWing leftOrRightWing = new HorizontalWing(world, wing.getFeet(), stack.pop(), false, deltaDist, aboveHeadBlocked, floorRequired);
                     this.founding = leftOrRightWing.getFounding();
                     if (this.founding.isPresent()) {
                         this.paddedStart = calculatePaddedPos(start, this.founding.get(), dir);
@@ -108,7 +118,20 @@ public class HorizontalWing {
                     return;
                 }*/
             }
-            final VerticalWing vWing = new VerticalWing(world, wing.getFeet().offset(Direction.DOWN, Consts.MAX_DESCEND), wing.getFeet().offset(Direction.UP, Consts.MAX_ASCEND), floorRequired);
+
+            final int dim2D = distance * i;
+            int masssummeDifferenz = Consts.MAX_ABSOLUTE_DISTANCE - (distance + i);
+            System.out.println("masssummeDifferenz: " + masssummeDifferenz);
+            if (masssummeDifferenz < 0) masssummeDifferenz = 0;
+            int remainingScendingDist = dim2D < 1 ? 0 : Consts.MAX_PASSABLE_VOLUME / dim2D;
+            int remainingAscendingDist = Math.min(masssummeDifferenz, dim2D < 1 ? Consts.MAX_ASCEND : Math.min(remainingScendingDist, Consts.MAX_ASCEND )); //remainingScendingDist < Consts.MAX_ASCEND ? remainingScendingDist : Consts.MAX_ASCEND;
+            int remainingDescendingDist = Math.min(masssummeDifferenz, Consts.MAX_ABSOLUTE_DISTANCE-11 <= i ?
+                    0
+                    :
+                    dim2D < 1 ? Consts.MAX_DESCEND : Math.min(remainingScendingDist, Consts.MAX_DESCEND));//remainingScendingDist < Consts.MAX_DESCEND ? remainingScendingDist : Consts.MAX_DESCEND;
+            System.out.println("remainingAscendingDist: " + remainingAscendingDist);
+            System.out.println("remainingDescendingDist: " + remainingDescendingDist);
+            final VerticalWing vWing = new VerticalWing(world, wing.getFeet().offset(Direction.DOWN, remainingDescendingDist), wing.getFeet().offset(Direction.UP, remainingAscendingDist), floorRequired);
             //this.failed = hWing.hasFailed();
             this.founding = vWing.getFounding();
             if (this.founding.isPresent()) {

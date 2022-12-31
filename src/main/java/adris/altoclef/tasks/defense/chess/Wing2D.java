@@ -4,20 +4,22 @@ import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.Optional;
+
 public class Wing2D {
     private final Wing1D lower, higher;
     private final boolean elevated;
     private final boolean failed;
     private final BlockPos feet;
 
-    public Wing2D(final World world, final BlockPos feet, final boolean aboveHeadBlocked) {
+    public Wing2D(final World world, final BlockPos feet, final boolean aboveHeadBlocked, final boolean prevElevated) {
         this.feet = feet;
         final Wing1D lower = new Wing1D(world, feet);
         this.elevated = lower.hasFailed();
         final BlockPos fixedFeet = isElevated() ? feet.up() : feet;
         this.lower = isElevated() ? new Wing1D(world, fixedFeet) : lower;
         this.higher = new Wing1D(world, fixedFeet.up());
-        this.failed = this.lower.hasFailed() || this.higher.hasFailed() || (aboveHeadBlocked && this.elevated);
+        this.failed = this.lower.hasFailed() || this.higher.hasFailed() || (aboveHeadBlocked && this.elevated) || (prevElevated && !this.elevated);
     }
     public boolean isElevated() {
         return this.elevated;
