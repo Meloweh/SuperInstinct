@@ -119,13 +119,16 @@ public class HorizontalWing {
                 }*/
             }
 
+            System.out.println("partingDistanceUsage: " + partingDistanceUsage);
+            System.out.println("i: " + i);
             final int dim2D = partingDistanceUsage * i;
+            System.out.println("dim2D: " + dim2D);
             int masssummeDifferenz = Consts.MAX_ABSOLUTE_DISTANCE - (partingDistanceUsage + i);
             System.out.println("masssummeDifferenz: " + masssummeDifferenz);
             if (masssummeDifferenz < 0) masssummeDifferenz = 0;
             int remainingScendingDist = dim2D < 1 ? 0 : Consts.MAX_PASSABLE_VOLUME / dim2D;
             int remainingAscendingDist = Math.min(masssummeDifferenz, dim2D < 1 ? Consts.MAX_ASCEND : Math.min(remainingScendingDist, Consts.MAX_ASCEND )); //remainingScendingDist < Consts.MAX_ASCEND ? remainingScendingDist : Consts.MAX_ASCEND;
-            int remainingDescendingDist = Math.min(masssummeDifferenz, Consts.MAX_ABSOLUTE_DISTANCE-11 <= i ?
+            int remainingDescendingDist = Math.min(masssummeDifferenz, partingDistanceUsage + i >= 11 ?
                     0
                     :
                     dim2D < 1 ? Consts.MAX_DESCEND : Math.min(remainingScendingDist, Consts.MAX_DESCEND));//remainingScendingDist < Consts.MAX_DESCEND ? remainingScendingDist : Consts.MAX_DESCEND;
