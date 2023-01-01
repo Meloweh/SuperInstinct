@@ -1,6 +1,8 @@
 package adris.altoclef.tasks.defense.chess;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.tasks.defense.TPAura;
+import adris.altoclef.util.helpers.BlockPosHelper;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -42,5 +44,23 @@ public class Queen {
     }
     public static Optional<BlockPos> nextJump(final AltoClef mod) {
         return nextJump(mod, false);
+    }
+
+    public static boolean attemptJump(final AltoClef mod, final boolean floorRequired) {
+        Optional<BlockPos> pos = Queen.nextJump(mod, floorRequired);
+        if (pos.isPresent()) {
+            System.out.println("candidate at " + BlockPosHelper.toVec3dCenter(pos.get()).toString());
+            TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pos.get()));
+            return true;
+        }
+        System.out.println("pos empty");
+        return false;
+    }
+
+    /**
+     * Floored.
+     */
+    public static boolean attemptJump(final AltoClef mod) {
+        return attemptJump(mod, true);
     }
 }

@@ -4,17 +4,10 @@ import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.control.KillAura;
 import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
-import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
-import adris.altoclef.tasks.SecurityShelterTask;
-import adris.altoclef.tasks.defense.DefenseConstants;
-import adris.altoclef.tasks.defense.MobHat;
-import adris.altoclef.tasks.defense.MobHatV2;
-import adris.altoclef.tasks.defense.TPAura;
-import adris.altoclef.tasks.entity.KillEntitiesTask;
+import adris.altoclef.tasks.defense.*;
 import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.tasks.movement.*;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
-import adris.altoclef.tasksystem.Task;
 import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.util.MovementCounter;
 import adris.altoclef.util.baritone.CachedProjectile;
@@ -26,8 +19,6 @@ import baritone.Baritone;
 import baritone.api.utils.input.Input;
 import net.minecraft.block.AbstractFireBlock;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.WitherEntity;
@@ -37,11 +28,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.entity.projectile.thrown.PotionEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.SwordItem;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -72,8 +59,10 @@ public class MobDefenseChain extends SingleTaskChain {
     private Optional<GetToXZTask> optXZTask = Optional.empty();
     private Optional<KillEntityTask> killEntity = Optional.empty();
     private Optional<RunAwayFromHostilesTask> runFromHostiles = Optional.empty();
+    private final BaitTrap baitTrap = new BaitTrap();
 
     public TPAura tpAura = new TPAura();
+    private CombatHandler combatHandler = new CombatHandler();
     private MobHatV2 mobHat = new MobHatV2();
 
     public MobDefenseChain(TaskRunner runner) {
@@ -98,42 +87,6 @@ public class MobDefenseChain extends SingleTaskChain {
     public float getPriority(AltoClef mod) {
         _cachedLastPriority = getPriorityInner(mod);
         return _cachedLastPriority;
-    }
-
-    private void startShielding(AltoClef mod) {
-        ItemStack handItem = StorageHelper.getItemStackInSlot(PlayerSlot.getEquipSlot());
-        ItemStack cursor = StorageHelper.getItemStackInCursorSlot();
-        if (handItem.isFood()) {
-            mod.getSlotHandler().clickSlot(PlayerSlot.getEquipSlot(), 0, SlotActionType.PICKUP);
-        }
-        if (cursor.isFood()) {
-            Optional<Slot> toMoveTo = mod.getItemStorage().getSlotThatCanFitInPlayerInventory(cursor, false).or(() -> StorageHelper.getGarbageSlot(mod));
-            if (toMoveTo.isPresent()) {
-                Slot garbageSlot = toMoveTo.get();
-                mod.getSlotHandler().clickSlot(garbageSlot, 0, SlotActionType.PICKUP);
-            }
-        }
-        _shielding = true;
-        mod.getInputControls().hold(Input.SNEAK);
-        mod.getInputControls().hold(Input.CLICK_RIGHT);
-        mod.getExtraBaritoneSettings().setInteractionPaused(true);
-    }
-
-    private void stopShielding(AltoClef mod) {
-        if (_shielding) {
-            ItemStack cursor = StorageHelper.getItemStackInCursorSlot();
-            if (cursor.isFood()) {
-                Optional<Slot> toMoveTo = mod.getItemStorage().getSlotThatCanFitInPlayerInventory(cursor, false).or(() -> StorageHelper.getGarbageSlot(mod));
-                if (toMoveTo.isPresent()) {
-                    Slot garbageSlot = toMoveTo.get();
-                    mod.getSlotHandler().clickSlot(garbageSlot, 0, SlotActionType.PICKUP);
-                }
-            }
-            mod.getInputControls().release(Input.SNEAK);
-            mod.getInputControls().release(Input.CLICK_RIGHT);
-            mod.getExtraBaritoneSettings().setInteractionPaused(false);
-            _shielding = false;
-        }
     }
 
     boolean escapeDragonBreath(AltoClef mod) {
@@ -167,10 +120,10 @@ public class MobDefenseChain extends SingleTaskChain {
         // Pause if we're not loaded into a world.
         if (!AltoClef.inGame()) return Float.NEGATIVE_INFINITY;
         if (MovementCounter.fillMovements > 3 || MovementCounter.tpMovements > 3) {
-            Debug.logMessage("fillMovements: " + MovementCounter.fillMovements);
-            Debug.logMessage("tpMovements: " + MovementCounter.tpMovements);
-            System.out.println("fillMovements: " + MovementCounter.fillMovements);
-            System.out.println("tpMovements: " + MovementCounter.tpMovements);
+            //Debug.logMessage("fillMovements: " + MovementCounter.fillMovements);
+            //Debug.logMessage("tpMovements: " + MovementCounter.tpMovements);
+            //System.out.println("fillMovements: " + MovementCounter.fillMovements);
+            //System.out.println("tpMovements: " + MovementCounter.tpMovements);
             MovementCounter.fillMovements = 0;
             MovementCounter.tpMovements = 0;
 
@@ -182,12 +135,12 @@ public class MobDefenseChain extends SingleTaskChain {
         _doingFunkyStuff = false;
         if (mod.getPlayer().getHealth() < 7 && SecurityShelterTask.canAttemptShelter(mod)) {
             if (mod.getFoodChain().hasFood()) {
-                final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()
+                /*final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()
                         .filter(e -> e.distanceTo(mod.getPlayer()) <= 15
                                 //&& !(e instanceof SkeletonEntity)
                                 //&& !(e instanceof CreeperEntity)
                                 && !(e instanceof ProjectileEntity))
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList());*/
                 final List<Entity> veryCloseHostiles = mod.getEntityTracker().getHostiles().stream()
                         .filter(e -> e.distanceTo(mod.getPlayer()) < 3
                                 //&& !(e instanceof SkeletonEntity)
@@ -261,8 +214,9 @@ public class MobDefenseChain extends SingleTaskChain {
                 safeToEat = true;
             }
         }*/
-        if (!tpAura.attemptAura(mod)) {
-            basicDefenseManager.onTick(mod);
+        /*
+        basicDefenseManager.onTick(mod);
+        if (!combatHandler.attemptAura(mod)) {
             if (!mobHat.attemptHat(mod)) {
                 final List<Entity> hostiles = mod.getEntityTracker().getHostiles();
                 if (hostiles.size() > 0) {
@@ -283,10 +237,27 @@ public class MobDefenseChain extends SingleTaskChain {
                     safeToEat = true;
                 }
             }
-        }
+        }*/
         /*if (tpAura.isAttacking()) {
             return 70;
         }*/
+        final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
+                .filter(e -> LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.HOSTILE_DISTANCE))
+                .collect(Collectors.toList());
+        if (nearbyHostiles.size() > 0) {
+            //System.out.println("nearby");
+            if (!baitTrap.isActive()) {
+                //System.out.println("fixate");
+                baitTrap.fixateTrap(mod, nearbyHostiles);
+            }
+            if (baitTrap.isActive()) {
+                //System.out.println("trapping");
+                baitTrap.trapping(mod, nearbyHostiles);
+            }
+        } else {
+            baitTrap.reset();
+        }
+
         return 0;
     }
 

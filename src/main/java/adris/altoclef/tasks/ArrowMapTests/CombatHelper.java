@@ -11,9 +11,13 @@ import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.PlayerSlot;
+import adris.altoclef.util.slots.Slot;
 import baritone.api.utils.input.Input;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.screen.slot.SlotActionType;
+
+import java.util.Optional;
 
 public class CombatHelper {
     private static boolean IS_HOLDING_SHIELD = false;
@@ -58,5 +62,51 @@ public class CombatHelper {
 
     public static boolean isHoldingShield() {
         return IS_HOLDING_SHIELD;
+    }
+    public static void startShielding(AltoClef mod) {
+        ItemStack handItem = StorageHelper.getItemStackInSlot(PlayerSlot.getEquipSlot());
+        ItemStack cursor = StorageHelper.getItemStackInCursorSlot();
+        if (handItem.isFood()) {
+            mod.getSlotHandler().clickSlot(PlayerSlot.getEquipSlot(), 0, SlotActionType.PICKUP);
+        }
+        if (cursor.isFood()) {
+            Optional<Slot> toMoveTo = mod.getItemStorage().getSlotThatCanFitInPlayerInventory(cursor, false).or(() -> StorageHelper.getGarbageSlot(mod));
+            if (toMoveTo.isPresent()) {
+                Slot garbageSlot = toMoveTo.get();
+                mod.getSlotHandler().clickSlot(garbageSlot, 0, SlotActionType.PICKUP);
+            }
+        }
+        IS_HOLDING_SHIELD = true;
+        mod.getInputControls().hold(Input.SNEAK);
+        mod.getInputControls().hold(Input.CLICK_RIGHT);
+        mod.getExtraBaritoneSettings().setInteractionPaused(true);
+    }
+
+    public static void stopShielding(AltoClef mod) {
+        if (IS_HOLDING_SHIELD) {
+            ItemStack cursor = StorageHelper.getItemStackInCursorSlot();
+            if (cursor.isFood()) {
+                Optional<Slot> toMoveTo = mod.getItemStorage().getSlotThatCanFitInPlayerInventory(cursor, false).or(() -> StorageHelper.getGarbageSlot(mod));
+                if (toMoveTo.isPresent()) {
+                    Slot garbageSlot = toMoveTo.get();
+                    mod.getSlotHandler().clickSlot(garbageSlot, 0, SlotActionType.PICKUP);
+                }
+            }
+            mod.getInputControls().release(Input.SNEAK);
+            mod.getInputControls().release(Input.CLICK_RIGHT);
+            mod.getExtraBaritoneSettings().setInteractionPaused(false);
+            IS_HOLDING_SHIELD = false;
+        }
+    }
+    public static boolean equipShield(final AltoClef mod) {
+        if (!hasShield(mod)) return false;
+        ItemStack shieldSlot = StorageHelper.getItemStackInSlot(PlayerSlot.OFFHAND_SLOT);
+        if (shieldSlot.getItem() != Items.SHIELD) {
+            mod.getSlotHandler().forceEquipItemToOffhand(Items.SHIELD);
+            return true;
+        } else {
+            startShielding(mod);
+        }
+        return false;
     }
 }

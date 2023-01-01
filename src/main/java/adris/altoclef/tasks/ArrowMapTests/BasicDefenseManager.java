@@ -1,6 +1,7 @@
 package adris.altoclef.tasks.ArrowMapTests;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.tasks.defense.chess.Queen;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.helpers.LookHelper;
 import baritone.api.utils.Rotation;
@@ -65,6 +66,7 @@ public class BasicDefenseManager {
     }
 
     private Task run(final AltoClef mod) {
+        Queen.attemptJump(mod);
         return null;
     }
 
@@ -570,6 +572,7 @@ public class BasicDefenseManager {
             ).count() == infoList.size();
             final boolean isShieldStrategy = this.strategy.equals(Strategy.SHIELD);
             final boolean hasEnoughShieldingTime = info0.getRemainingTicks() > 5;
+            final boolean hasEnoughPlacementTime = info0.getRemainingTicks() > 3;
             final boolean isBlockInInv = hasBlock(mod);
             final boolean isSideFloored = hasFloorOnSide(mod, info0.getTraceInfo().getHitSide());
             final boolean isJumpableSpot = playerAtJumpableSpot(mod);
@@ -586,7 +589,7 @@ public class BasicDefenseManager {
 
             if (allFromSameSide && (isShieldStrategy || hasEnoughShieldingTime) && CombatHelper.hasShield(mod)) {
                 this.strategy = Strategy.SHIELD;
-            } else if (allFromSameSide && isBlockInInv/* && isSideFloored*/) {
+            } else if (allFromSameSide && isBlockInInv/* && isSideFloored*/ && hasEnoughPlacementTime) {
                 if (this.placeCandidates.isEmpty()) {
                     infoList.forEach(e -> {
                         final Direction dir = inverse(e.getTraceInfo().getHitSide());
@@ -604,19 +607,19 @@ public class BasicDefenseManager {
                     }*/
                 }
                 this.strategy = Strategy.PLACE_SIDE;
-            } else if (hasBlock(mod) && isJumpableSpot) {
-                if (this.placeCandidates.isEmpty()) {
-                    this.placeCandidates.add(mod.getPlayer().getBlockPos());
-                }
-                this.strategy = Strategy.PLACE_BELOW;
+            //} else if (hasBlock(mod) && isJumpableSpot) {
+                //if (this.placeCandidates.isEmpty()) {
+                //    this.placeCandidates.add(mod.getPlayer().getBlockPos());
+                //}
+                //this.strategy = Strategy.PLACE_BELOW;
             /*} else if (allHigh && allHigh && isFloorThickUnderPlayer && canBreakFloor) {
                 if (this.breakCandidate.isEmpty()) {
                     this.breakCandidate = Optional.of(mod.getPlayer().getBlockPos().down());
                 }
                 this.strategy = Strategy.DIG;*/
-            } else if (allNonVertical && isJumpableSpot) {
+            } /*else if (allNonVertical && isJumpableSpot && all) {
                 this.strategy = Strategy.JUMP;
-            } else {
+            }*/ else {
                 this.strategy = Strategy.RUN;
             }
             System.out.println("Strategy: " + this.strategy.toString() + " delta: " + info0.getRemainingTicks());

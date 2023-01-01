@@ -121,7 +121,7 @@ public class MobHatV2 {
 
     public boolean attemptHat(AltoClef mod) {
         final List<Entity> hostiles = mod.getEntityTracker().getHostiles().stream().filter(e ->
-                e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE && LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)).collect(Collectors.toList());
+                e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE && LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE) && e.distanceTo(mod.getPlayer()) > 2).collect(Collectors.toList());
         nearbyPresent = hostiles.size() > 0;
         for (final Entity e : hostiles) {
             final List<BlockPos> around = getAround(e);

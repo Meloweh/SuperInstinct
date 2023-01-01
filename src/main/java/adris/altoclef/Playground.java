@@ -3,7 +3,8 @@ package adris.altoclef;
 import adris.altoclef.butler.WhisperChecker;
 import adris.altoclef.tasks.ArrowMapTests.LastAttackTestTask;
 import adris.altoclef.tasks.CraftGenericManuallyTask;
-import adris.altoclef.tasks.SecurityShelterTask;
+import adris.altoclef.tasks.Test.BaitTrapTest;
+import adris.altoclef.tasks.defense.SecurityShelterTask;
 import adris.altoclef.tasks.construction.PlaceBlockNearbyTask;
 import adris.altoclef.tasks.construction.PlaceSignTask;
 import adris.altoclef.tasks.construction.PlaceStructureBlockTask;
@@ -46,8 +47,6 @@ import net.minecraft.item.Items;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.world.BlockStateRaycastContext;
-import net.minecraft.world.RaycastContext;
 import net.minecraft.world.chunk.EmptyChunk;
 import org.apache.commons.io.IOUtils;
 
@@ -196,6 +195,9 @@ public class Playground {
             case "stacked2":
                 mod.runUserTask(new EquipArmorTask(Items.DIAMOND_CHESTPLATE));
                 break;
+            case "trap":
+                mod.runUserTask(new BaitTrapTest());
+                break;
             case "cast":
                 BlockPos curr = mod.getPlayer().getBlockPos();
                 BlockPos goal = curr.offset(Direction.NORTH, 10);
@@ -215,22 +217,10 @@ public class Playground {
                 }
                 break;
             case "queen":
-                Optional<BlockPos> pos = Queen.nextJump(mod);
-                if (pos.isEmpty()) {
-                    System.out.println("pos empty");
-                } else {
-                    System.out.println("candidate at " + BlockPosHelper.toVec3dCenter(pos.get()).toString());
-                    TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pos.get()));
-                }
+                Queen.attemptJump(mod, false);
                 break;
             case "gqueen"://sample text
-                Optional<BlockPos> pos2 = Queen.nextJump(mod, true);
-                if (pos2.isEmpty()) {
-                    System.out.println("pos empty");
-                } else {
-                    System.out.println("candidate at " + BlockPosHelper.toVec3dCenter(pos2.get()).toString());
-                    TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pos2.get()));
-                }
+                Queen.attemptJump(mod, true);
                 break;
             case "uvclip":
                 TPAura.tp(mod, mod.getPlayer().getPos().add(0, 3, 0));

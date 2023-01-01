@@ -2,8 +2,6 @@ package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
-import adris.altoclef.tasks.SecurityShelterTask;
-import adris.altoclef.tasksystem.Task;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 

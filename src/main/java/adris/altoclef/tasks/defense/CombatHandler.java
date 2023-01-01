@@ -2,62 +2,37 @@ package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.chains.MobDefenseChain;
-import adris.altoclef.tasks.ArrowMapTests.BowArrowIntersectionTracer;
-import adris.altoclef.tasks.ArrowMapTests.CollisionFeedback;
-import adris.altoclef.tasks.ArrowMapTests.SimMovementState;
-import adris.altoclef.tasks.ArrowMapTests.TraceResult;
+import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.defense.chess.Queen;
+import adris.altoclef.tasks.defense.chess.VerticalWing;
+import adris.altoclef.tasks.defense.chess.Wing1D;
 import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.util.MovementCounter;
+import adris.altoclef.util.helpers.BlockPosHelper;
 import adris.altoclef.util.helpers.LookHelper;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.CreeperEntity;
-import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.entity.mob.PhantomEntity;
 import net.minecraft.entity.mob.SkeletonEntity;
-import net.minecraft.entity.passive.FoxEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.world.World;
-import net.minecraft.world.event.GameEvent;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class TPAura {
+public class CombatHandler {
     private boolean attacking = false;
-    private MobHatV2 mobHat = new MobHatV2();
     private List<Entity> used = new LinkedList<>();
-    //private Optional<SkeletonEntity> recentSource = Optional.empty();
     private Optional<BlockPos> prev = Optional.empty();
-    private final static Random rand = new Random();
 
     private static void cancelFall(final AltoClef mod) {
         mod.getPlayer().networkHandler.sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(true));
     }
-    private double SVM2d(final Vec3d startPos, final Vec3d endPos, final Vec3d orthPoint) {
-        Vec3d sub = endPos.subtract(startPos);
-        Vec3d n = new Vec3d(-sub.z, 0, sub.x);
-        double nd = 1 / Math.sqrt(Math.pow(n.x, 2) + Math.pow(n.z, 2));
-        Vec3d x1minux0 = orthPoint.subtract(startPos);
-        double result = x1minux0.x * n.x * nd + x1minux0.z * n.z * nd;
-        return result;
-    }
-
     private boolean targetInSight(final Vec3d target, final Entity arrow) {
         final Vec3d arrowVec = new Vec3d(1, 0, 0);//arrow.getVelocity();
         final Vec3d arrowPos = new Vec3d(0, 5, 0);//arrow.getPos();
@@ -68,24 +43,19 @@ public class TPAura {
         //System.out.println(phi);
         return phi > 3 * Math.PI / 4;
     }
-
     private static List<Entity> explodingCreepersAt(final AltoClef mod, final Vec3d vec) {
         return mod.getEntityTracker().getTrackedEntities(CreeperEntity.class).stream().filter(e -> distanceTo(e.getPos(), vec) <= DefenseConstants.CREEPER_RADIUS && isCreeperCritical(e)).collect(Collectors.toList());
     }
-
     private static boolean explodingCreeperAt(final AltoClef mod, final Vec3d vec) {
         return explodingCreepersAt(mod, vec).size() > 0;
     }
-
     private Vec3d hCenterOf(final Vec3d vec) {
         return new Vec3d(Math.floor(vec.getX()) + 0.5, vec.getY(), Math.floor(vec.getZ() + 0.5));
     }
-
     private static boolean isCreeperCritical(final CreeperEntity creeper) {
         final float fusingTime = creeper.getClientFuseTime(1);
         return Float.compare(fusingTime, 0.75f) >= 0;
     }
-
     public boolean attemptAura(final AltoClef mod) {
         //final List<SkeletonEntity> skels = mod.getEntityTracker().getTrackedEntities(SkeletonEntity.class);
         //final List<SkeletonEntity> nearbySkels = skels.stream().filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.NEARBY_DISTANCE).collect(Collectors.toList());
@@ -103,6 +73,8 @@ public class TPAura {
                 chorusTp(mod, true);
             }
         }*/
+        final List<Entity> hostilesSomewhatNearby = mod.getEntityTracker().getHostiles().stream()
+                .filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.HOSTILE_DISTANCE  && !(e instanceof ProjectileEntity)).collect(Collectors.toList());
         nearbyHostiles.sort((a, b) -> {
             int result = Boolean.compare((a instanceof CreeperEntity), b instanceof CreeperEntity);
             if (result == 0) {
@@ -113,111 +85,59 @@ public class TPAura {
             }
             return result;
         });
-        used.removeIf(e -> e == null || e.isRegionUnloaded() || e.horizontalCollision || e.verticalCollision || e.isOnGround() || e.distanceTo(mod.getPlayer()) > 70);
-        final List<ArrowEntity> arrows = mod.getEntityTracker().getTrackedEntities(ArrowEntity.class).stream()
-                .filter(e -> (int)Math.ceil(distanceTo(e.getPos(), mod.getPlayer().getPos())) < DefenseConstants.TP_RADIUS && !e.horizontalCollision && !e.verticalCollision && !used.contains(e))
-                .collect(Collectors.toList());
-        final List<WitherSkullEntity> skulls = mod.getEntityTracker().getTrackedEntities(WitherSkullEntity.class)
-                .stream().filter(e -> (int)Math.ceil(distanceTo(e.getPos(), mod.getPlayer().getPos())) < DefenseConstants.WHITHER_SKULL_DISTANCE).collect(Collectors.toList());
-        /*arrows.forEach(e -> {
-            if (e.horizontalCollision || e.verticalCollision) {
-                used.add(e);
-            }
-        });*/
-        //arrows.removeIf(e -> used.contains(e));
 
-        /*if (nearbyHostiles.size() > 0) {
-            System.out.println(targetInSight(mod.getPlayer().getPos(), nearbyHostiles.get(0)));
-        }*/
-
-        if (nearbyHostiles.size() < 1) {
-            attacking = false;
-            //System.out.println("nearbyHostiles.size() < 1");
-        }
-
-        boolean tryAttack = true;
-        if (tryAttack && skulls.size() > 0) {
-            /*if (chorusTp(mod, false, 64)) {
-                used.addAll(skulls);
-                tryAttack = false;
-            }*/
-            if (Queen.attemptJump(mod, true)) {
-                used.addAll(skulls);
-                tryAttack = false;
-            }
-        }
-        if (tryAttack && arrows.size() > 0) {
-            //System.out.println("arrows.size() > 0");
-            final ArrowEntity arrow = arrows.get(0);
-            final Vec3d vecProj = arrow.getPos();
-            final Vec3d velProj = arrow.getVelocity();
-            final Vec3d velNormal = velProj.normalize();
-            final Vec3d oppositeDir = velNormal.multiply(-1.5);
-            final Vec3d rawTpGoal = hCenterOf(vecProj.add(oppositeDir));
-            final double fixedY = nearbyHostiles.size() < 1 ? rawTpGoal.getY() : Math.max(rawTpGoal.getY(), nearbyHostiles.get(0).getY());
-            final Vec3d tweakedTpGoal = new Vec3d(rawTpGoal.getX(), fixedY, rawTpGoal.getZ());//rawTpGoal.add(0, i, 0);
-            if (canTpThere(tweakedTpGoal, mod)) {
-                used.add(arrow);
-                tp(mod, rawTpGoal);
-                tryAttack = false;
-            }
-            if (tryAttack) {
-                System.out.println("cannot dodge");
-                chorusTp(mod, true);
-            } else {
-                System.out.println("can dodge");
-            }
-            //final BlockPos tpGoal = new BlockPos(rawTpGoal);
-            /*if (canTpThere(rawTpGoal, mod)) {
-                used.add(arrow);
-                //final double max = nearbyHostiles.size() > 0 ? Math.max(rawTpGoal.getY(), nearbyHostiles.get(0).getY()) : rawTpGoal.getY();
-                //tp(mod, hCenterOf(rawTpGoal).add(0, max-rawTpGoal.getY(), 0));
-                tp(mod, rawTpGoal);
-                tryAttack = false;
-                System.out.println("can dodge");
-            } else {
-                System.out.println("cannot dodge"); // TODO (done): ok but then fight if possible
-            }*/
-        }
-        if (tryAttack && nearbyHostiles.size() > 0) {
+        if (nearbyHostiles.size() > 0) {
             MobDefenseChain.safeToEat = false;
-            //nearbyHostiles.sort((a, b) -> (int) ((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer()))*1000));
-            //nearbyHostiles.sort((a, b) -> Boolean.compare((a instanceof CreeperEntity), b instanceof CreeperEntity));
-
             final Iterator<Entity> entityIt = nearbyHostiles.iterator();
             do {
                 final Entity entity = entityIt.next();
-                final Vec3d eye = entity.getEyePos();
-                //final BlockPos eyeBlock = new BlockPos(eye);
-                //final BlockPos tpGoal = eyeBlock.up();
-                final Vec3d tpGoal = hCenterOf(eye).add(0, 1, 0);
-                final Vec3d aboveTpGoal = tpGoal.add(0, 1, 0);
+                //final Vec3d eye = entity.getEyePos();//new Vec3d(mod.getPlayer().getX(), entity.getEyeY(), mod.getPlayer().getZ());//entity.getEyePos();
+                //final Vec3d tpGoal = hCenterOf(eye).add(0, 1, 0);
 
                 if (entity instanceof CreeperEntity && entity.distanceTo(mod.getPlayer()) <= DefenseConstants.CREEPER_RADIUS) {
                     final CreeperEntity creeper = (CreeperEntity) entity;
                     if (isCreeperCritical(creeper)) {
-                        //chorusTp(mod, true);
+                        /*final Wing1D above1 = new Wing1D(mod.getWorld(), mod.getPlayer().getBlockPos().up().up());
+                        final Wing1D above2 = new Wing1D(mod.getWorld(), above1.getPos().up());
+                        if (above1.hasFailed() || above2.hasFailed()) {
+                            if (canTpThere(mod, BlockPosHelper.toVec3dCenter(above2.getPos().up()))) {
+                                tp(mod, BlockPosHelper.toVec3dCenter(above2.getPos().up()));
+                                return true;
+                            }
+                        }*/
+                        final VerticalWing vWing = new VerticalWing(mod.getWorld(),
+                                mod.getPlayer().getBlockPos().offset(Direction.DOWN, DefenseConstants.TP_RADIUS),
+                                mod.getPlayer().getBlockPos().offset(Direction.UP, DefenseConstants.TP_RADIUS), true);
+                        final Optional<BlockPos> founding = vWing.getFounding();
+                        if (founding.isPresent()) {
+                            final BlockPos target = founding.get();
+                            if (target.getY() != mod.getPlayer().getBlockY()) {
+                                tp(mod, BlockPosHelper.toVec3dCenter(target));
+                                return true;
+                            }
+                        }
                         Queen.attemptJump(mod, true);
                         return true;
                     }
                     return false;
                 }
 
-                final boolean canTpUpUp = canTpThere(aboveTpGoal, mod);
-                if (canTpUpUp && mobHat.canAttemptHat(mod)) {
-                    tp(mod, aboveTpGoal);
-                }
-                attacking = mobHat.attemptHat(mod);
-                final boolean canTpUp = canTpThere(tpGoal, mod);
+                //final boolean canTpUp = canTpThere(tpGoal, mod);
                 //System.out.println(canTpUp);
-                if (!attacking && canTpUp && (!(entity instanceof SkeletonEntity) || nearbyHostiles.size() < 2 && mod.getPlayer().getHealth() > 10) && (!(entity instanceof CreeperEntity) || !isCreeperCritical((CreeperEntity) entity))) {
-                    final Vec3d newPos3d = new Vec3d(tpGoal.getX(), entity.getPos().getY() + entity.getBoundingBox().getYLength() + 1, tpGoal.getZ());
-                    tp(mod, newPos3d);
+                if (Math.abs(mod.getPlayer().getY() - entity.getY()) < 3) {
+                    if (mod.getPlayer().isOnGround()) {
+                        mod.getPlayer().jump();
+                    }
+                    if (entity.isOnGround() && (new Wing1D(mod.getWorld(), mod.getPlayer().getBlockPos().down()).hasFailed())) {
+                        BasicDefenseManager.fill(mod, mod.getPlayer().getBlockPos().down());
+                    }
+                }
+                if ((!(entity instanceof SkeletonEntity) || nearbyHostiles.size() < 2 && mod.getPlayer().getHealth() > 10) && (!(entity instanceof CreeperEntity) || !isCreeperCritical((CreeperEntity) entity))) {
                     float hitProg = mod.getPlayer().getAttackCooldownProgress(0);
                     // Equip weapon
-                    if (!(entity instanceof SkeletonEntity)) {
+                    //if (!(entity instanceof SkeletonEntity)) {
                         KillEntityTask.equipWeapon(mod);
-                    }
+                    //}
                     if (hitProg >= 1) {
                         LookHelper.lookAt(mod, entity.getEyePos());
                         mod.getControllerExtras().attack(entity);
@@ -418,18 +338,12 @@ public class TPAura {
         return false;
     }
 
-    public static final void tp(final AltoClef mod, final Vec3d tpGoal, final boolean shouldCancelFall) {
+    public static final void tp(final AltoClef mod, final Vec3d tpGoal) {
         mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
-        if (shouldCancelFall) {
-            mod.getPlayer().setVelocity(0d, 0d, 0d);
-            cancelFall(mod);
-        }
+        mod.getPlayer().setVelocity(0d, 0d, 0d);
+        cancelFall(mod);
         mod.getPlayer().setPos(tpGoal.getX(), tpGoal.getY(), tpGoal.getZ());
         MovementCounter.tpMovements++;
-    }
-
-    public static final void tp(final AltoClef mod, final Vec3d tpGoal) {
-        tp(mod, tpGoal, true);
     }
 
     private static float distanceTo(Vec3d a, Vec3d b) {
@@ -443,3 +357,4 @@ public class TPAura {
         return this.attacking;
     }
 }
+

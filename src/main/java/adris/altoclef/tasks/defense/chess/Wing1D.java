@@ -22,4 +22,7 @@ public class Wing1D {
     public BlockState getState() {
         return this.state;
     }
+    public BlockPos getPos() {
+        return pos;
+    }
 }

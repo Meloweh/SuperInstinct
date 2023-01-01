@@ -6,9 +6,11 @@ package adris.altoclef.tasks.ArrowMapTests;
 
 import adris.altoclef.util.MovementCounter;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
@@ -17,6 +19,8 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 public class MeteorClientPlace {
     private static Vec3d hitPos = new Vec3d(0, 0, 0);
@@ -81,4 +85,25 @@ public class MeteorClientPlace {
     public static boolean canInstaBreak(BlockPos blockPos) {
         return canInstaBreak(blockPos, mc.world.getBlockState(blockPos));
     }
+
+    public static void packetBreakBlock(final World world, BlockPos block) {
+        mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, block, Direction.UP));
+        mc.player.swingHand(Hand.MAIN_HAND);
+        mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, block, Direction.UP));
+    }
+    public static boolean packetBreakBlocks(final World world, List<BlockPos> blocks) {
+        boolean mining = false;
+        for (BlockPos block : blocks) {
+            final BlockState state = world.getBlockState(block);
+            System.out.println(block.toString() + " state: " + state.isAir());
+            if (state.isAir()) {
+                continue;
+            }
+            packetBreakBlock(world, block);
+            //mining = true;
+            return true;
+        }
+        return mining;
+    }
+
 }
