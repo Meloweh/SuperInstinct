@@ -59,7 +59,7 @@ public class MobDefenseChain extends SingleTaskChain {
     private Optional<GetToXZTask> optXZTask = Optional.empty();
     private Optional<KillEntityTask> killEntity = Optional.empty();
     private Optional<RunAwayFromHostilesTask> runFromHostiles = Optional.empty();
-    private final BaitTrap baitTrap = new BaitTrap();
+    private BaitTrapV2 baitTrap;
 
     public TPAura tpAura = new TPAura();
     private CombatHandler combatHandler = new CombatHandler();
@@ -241,23 +241,38 @@ public class MobDefenseChain extends SingleTaskChain {
         /*if (tpAura.isAttacking()) {
             return 70;
         }*/
+        /*
+        if (baitTrap == null) {
+            baitTrap = new BaitTrap(mod);
+        }
+        final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
+                .filter(e -> LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.HOSTILE_DISTANCE))
+                .collect(Collectors.toList());
+        //final List<Entity> withoutSeeing = mod.getEntityTracker().getCloseEntities().stream().filter(e -> e instanceof HostileEntity && mod.getPlayer().distanceTo(e) < DefenseConstants.HOSTILE_DISTANCE).collect(Collectors.toList());
+        if (nearbyHostiles.size() > 0) {
+            System.out.println("fixate");
+            if (!baitTrap.isActive()) {
+                baitTrap.fixateTrap(mod, nearbyHostiles);
+            }
+        }
+        if (baitTrap.isActive()) {
+            System.out.println("trapping");
+            baitTrap.trapping(mod, nearbyHostiles);
+        } else {
+            System.out.println("reset");
+            baitTrap.reset(mod);
+        }*/
+        if (baitTrap == null) {
+            baitTrap = new BaitTrapV2(mod);
+        }
         final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
                 .filter(e -> LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.HOSTILE_DISTANCE))
                 .collect(Collectors.toList());
         if (nearbyHostiles.size() > 0) {
-            //System.out.println("nearby");
-            if (!baitTrap.isActive()) {
-                //System.out.println("fixate");
-                baitTrap.fixateTrap(mod, nearbyHostiles);
-            }
-            if (baitTrap.isActive()) {
-                //System.out.println("trapping");
-                baitTrap.trapping(mod, nearbyHostiles);
-            }
-        } else {
-            baitTrap.reset();
+            //System.out.println("fixate");
+            if (!baitTrap.isActive()) baitTrap.init(mod);
         }
-
+        if (baitTrap.isActive()) baitTrap.trapping(mod);
         return 0;
     }
 

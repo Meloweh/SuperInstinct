@@ -12,10 +12,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BaitTrapTest extends Task {
-    BaitTrap trap = new BaitTrap();
+    BaitTrap trap;
     boolean finished = false;
     @Override
     protected void onStart(AltoClef mod) {
+        trap = new BaitTrap(mod);
         final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
                 .filter(e -> e.distanceTo(mod.getPlayer()) <= DefenseConstants.HOSTILE_DISTANCE
                         //&& !(e instanceof SkeletonEntity)
