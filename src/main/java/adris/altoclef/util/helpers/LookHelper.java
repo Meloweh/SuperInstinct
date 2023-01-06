@@ -22,6 +22,7 @@ import net.minecraft.util.math.*;
 import net.minecraft.world.RaycastContext;
 
 import java.util.Optional;
+import java.util.Random;
 
 /**
  * Helper functions to interpret and change our player's look direction
@@ -247,5 +248,9 @@ public interface LookHelper {
     static Rotation getLookRotation(AltoClef mod, BlockPos toLook) {
         return getLookRotation(mod, WorldHelper.toVec3d(toLook));
     }
-
+    static Direction randomDirection2D() {
+        final Random rand = new Random();
+        int next = 2 + rand.nextInt(4);
+        return Direction.byId(next);
+    }
 }

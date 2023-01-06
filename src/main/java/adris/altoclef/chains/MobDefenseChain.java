@@ -266,7 +266,7 @@ public class MobDefenseChain extends SingleTaskChain {
             baitTrap = new BaitTrapV2(mod);
         }
         final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
-                .filter(e -> LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.HOSTILE_DISTANCE))
+                .filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.NEARBY_DISTANCE+2/*LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)*/)
                 .collect(Collectors.toList());
         if (nearbyHostiles.size() > 0) {
             //System.out.println("fixate");

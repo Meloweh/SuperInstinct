@@ -28,35 +28,29 @@ import java.util.stream.Collectors;
 
 public class BaitTrapV2 {
     private BlockPos pinnedPos;
-    //private final List<BlockPos> toBreak;
     private int timer;
     private static final int WAITING_LIMIT = 20*7;
     private boolean active;
     private boolean onlySkeletons;
-    private boolean doneFloor, doneChamber, doneTpInChamber, doneHatch, doneWaiting, doneClosing;
-    //private BlockPos waitingSpot;
+    private boolean doneChamber, doneTpInChamber, doneHatch, doneWaiting, doneClosing;
+    private Direction dir;
     public void reset(final AltoClef mod) {
         active = false;
         pinnedPos = null;
         timer = 0;
         onlySkeletons = false;
-        //waitingSpot = null;
         CombatHelper.stopShielding(mod);
         doneChamber = false;
         doneTpInChamber = false;
         doneHatch = false;
         doneClosing = false;
-        doneFloor = false;
         doneWaiting = false;
+        dir = null;
     }
     public BaitTrapV2(final AltoClef mod) {
         reset(mod);
     }
 
-    private void pinPlace(final AltoClef mod) {
-        //toBreak.add(mod.getPlayer().getBlockPos().offset(Direction.DOWN, 2));
-        //toBreak.add(mod.getPlayer().getBlockPos().offset(Direction.DOWN, 3));
-    }
     private boolean ensureFloor(final AltoClef mod) {
         if (mod.getWorld().getBlockState(pinnedPos.offset(Direction.DOWN, 4)).isAir()) {
             if (mod.getItemStorage().getBlockCount() < 1) {
@@ -78,10 +72,11 @@ public class BaitTrapV2 {
     }
     private boolean mineHatch(final AltoClef mod) {
         final List<BlockPos> toBreak = new LinkedList<>();
-        toBreak.add(mod.getPlayer().getBlockPos().up().north());
-        toBreak.add(mod.getPlayer().getBlockPos().up().north().up());
-        toBreak.add(mod.getPlayer().getBlockPos().up().north().up().up());
-        toBreak.add(mod.getPlayer().getBlockPos().up().north().up().up().up());
+        toBreak.add(mod.getPlayer().getBlockPos().up().offset(dir, 1));
+        toBreak.add(mod.getPlayer().getBlockPos().up().offset(dir, 1).up());
+        toBreak.add(mod.getPlayer().getBlockPos().up().offset(dir, 1).up().up());
+        toBreak.add(mod.getPlayer().getBlockPos().up().offset(dir, 1).up().up().up());
+
         final boolean mining = MeteorClientPlace.packetBreakBlocks(mod.getWorld(), toBreak);
         return !mining;
     }
@@ -96,16 +91,15 @@ public class BaitTrapV2 {
             mod.getControllerExtras().attack(entity);
         }
     }
-    private void leaveChamber(final AltoClef mod) {
-        TPAura.tp(mod, BlockPosHelper.toVec3dCenter(mod.getPlayer().getBlockPos().offset(Direction.UP, 3)));
-    }
-
     public void init(final AltoClef mod) {
         reset(mod);
         pinnedPos = mod.getPlayer().getBlockPos();
-        active = true;
+        dir = LookHelper.randomDirection2D();
+        active = canTrapHere(mod);
+        if (!active) reset(mod);
     }
     public boolean trapping(final AltoClef mod) {
+        //if (!doneChamber && !canTrapHere(mod)) return false;
         if (!ensureFloor(mod)) return false;
         if (!doneChamber) TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pinnedPos));
         if (!doneChamber) doneChamber = mineChamber(mod);
@@ -117,10 +111,8 @@ public class BaitTrapV2 {
         if (!doneWaiting) murderBabies(mod);
         if (!doneWaiting) return false;
         TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pinnedPos));
-        //System.out.println("BACK TO: " + BlockPosHelper.toVec3dCenter(pinnedPos).toString());
-        //Queen.attemptJump(mod);
-        doneClosing = !mod.getWorld().getBlockState(pinnedPos.north()).isAir();
-        if (!doneClosing) BasicDefenseManager.fill(mod, pinnedPos.north());
+        doneClosing = !mod.getWorld().getBlockState(pinnedPos.offset(dir, 1)).isAir();
+        if (!doneClosing) BasicDefenseManager.fill(mod, pinnedPos.offset(dir, 1));
         if (!doneClosing) return false;
         Queen.attemptJump(mod);
         active = false;
@@ -129,5 +121,20 @@ public class BaitTrapV2 {
     }
     public boolean isActive() {
         return this.active;
+    }
+    private boolean canTrapHere(final AltoClef mod) {
+        for (BlockPos blockPos = mod.getPlayer().getBlockPos().offset(Direction.DOWN, 2); !blockPos.equals(mod.getPlayer().getBlockPos().offset(Direction.DOWN, 3)); blockPos = blockPos.down()) {
+            final BlockState state = mod.getWorld().getBlockState(blockPos);
+            if (!StorageHelper.miningRequirementMet(mod, MiningRequirement.getMinimumRequirementForBlock(state.getBlock()))) {
+                return false;
+            }
+        }
+        for (BlockPos blockPos = mod.getPlayer().getBlockPos().offset(Direction.DOWN, 2).offset(dir, 1); !blockPos.equals(mod.getPlayer().getBlockPos().offset(Direction.DOWN, 2).offset(dir, 1).offset(Direction.UP, 3)); blockPos = blockPos.up()) {
+            final BlockState state = mod.getWorld().getBlockState(blockPos);
+            if (!StorageHelper.miningRequirementMet(mod, MiningRequirement.getMinimumRequirementForBlock(state.getBlock()))) {
+                return false;
+            }
+        }
+        return true;
     }
 }
