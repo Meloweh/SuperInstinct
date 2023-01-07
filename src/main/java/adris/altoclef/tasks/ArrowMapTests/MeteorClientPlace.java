@@ -4,11 +4,17 @@
  */
 package adris.altoclef.tasks.ArrowMapTests;
 
+import adris.altoclef.AltoClef;
 import adris.altoclef.util.MovementCounter;
+import adris.altoclef.util.helpers.StorageHelper;
+import adris.altoclef.util.slots.PlayerSlot;
+import adris.altoclef.util.slots.Slot;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.util.ActionResult;
@@ -21,6 +27,7 @@ import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.World;
 
 import java.util.List;
+import java.util.Optional;
 
 public class MeteorClientPlace {
     private static Vec3d hitPos = new Vec3d(0, 0, 0);
@@ -91,11 +98,36 @@ public class MeteorClientPlace {
         mc.player.swingHand(Hand.MAIN_HAND);
         mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, block, Direction.UP));
     }
-    public static boolean packetBreakBlocks(final World world, List<BlockPos> blocks) {
+    /*public static void equipNeededTool(final AltoClef mod, final BlockPos pos) {
+        final BlockState state = mod.getWorld().getBlockState(pos);
+
+        BlockState state = mod.getWorld().getBlockState(pos);
+        Optional<Slot> bestToolSlot = StorageHelper.getBestToolSlot(mod, state);
+        Slot currentEquipped = PlayerSlot.getEquipSlot();
+
+        // if baritone is running, only accept tools OUTSIDE OF HOTBAR!
+        // Baritone will take care of tools inside the hotbar.
+        if (bestToolSlot.isPresent() && !bestToolSlot.get().equals(currentEquipped)) {
+            // ONLY equip if the item class is STRICTLY different (otherwise we swap around a lot)
+            if (StorageHelper.getItemStackInSlot(currentEquipped).getItem() != StorageHelper.getItemStackInSlot(bestToolSlot.get()).getItem()) {
+                boolean isAllowedToManage = !mod.getClientBaritone().getPathingBehavior().isPathing() || bestToolSlot.get().getInventorySlot() >= 9;
+                if (isAllowedToManage) {
+                    //Debug.logMessage("Found better tool in inventory, equipping.");
+                    ItemStack bestToolItemStack = StorageHelper.getItemStackInSlot(bestToolSlot.get());
+                    Item bestToolItem = bestToolItemStack.getItem();
+                    mod.getSlotHandler().forceEquipItem(bestToolItem);
+                }
+            }
+        }
+    }*/
+    public static boolean packetBreakBlocks(final AltoClef mod, List<BlockPos> blocks) {
+        final World world = mod.getWorld();
         boolean mining = false;
+        //mod.getSlotHandler().holdDefaultTool(mod);
         for (BlockPos block : blocks) {
             final BlockState state = world.getBlockState(block);
-            System.out.println(block.toString() + " state: " + state.isAir());
+            mod.getSlotHandler().equipBestToolFor(state);
+            //System.out.println(block.toString() + " state: " + state.isAir());
             if (state.isAir()) {
                 continue;
             }

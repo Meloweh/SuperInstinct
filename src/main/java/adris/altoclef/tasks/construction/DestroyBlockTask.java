@@ -2,6 +2,7 @@ package adris.altoclef.tasks.construction;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
+import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.movement.RunAwayFromPositionTask;
 import adris.altoclef.tasks.movement.SafeRandomShimmyTask;
 import adris.altoclef.tasks.resources.CollectFoodTask;
@@ -23,6 +24,7 @@ import net.minecraft.entity.mob.PillagerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 
 import java.util.Optional;
 
@@ -184,6 +186,9 @@ public class DestroyBlockTask extends Task implements ITaskRequiresGrounded {
         if (!WorldHelper.isSolid(mod, _pos.up()) && mod.getPlayer().getPos().y > _pos.getY() && _pos.isWithinDistance(mod.getPlayer().isOnGround() ? mod.getPlayer().getPos() : mod.getPlayer().getPos().add(0, -1, 0), 0.89)) {
             if (WorldHelper.dangerousToBreakIfRightAbove(mod, _pos)) {
                 setDebugState("It's dangerous to break as we're right above it, moving away and trying again.");
+                BasicDefenseManager.fill(mod, _pos.down());
+                BasicDefenseManager.fill(mod, _pos);
+                BasicDefenseManager.fill(mod, _pos.up());
                 return new RunAwayFromPositionTask(100, _pos.getY(), _pos);
             }
         }

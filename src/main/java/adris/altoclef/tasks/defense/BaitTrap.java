@@ -44,7 +44,7 @@ public class BaitTrap {
     }
     public void fixateTrap(final AltoClef mod, final List<Entity> nearbyHostiles) {
         toBreak.add(mod.getPlayer().getBlockPos().down().down());
-        MeteorClientPlace.packetBreakBlocks(mod.getWorld(), toBreak);
+        MeteorClientPlace.packetBreakBlocks(mod, toBreak);
         toBreak.clear();
         if (1 == 1) return;
         reset(mod);
@@ -80,7 +80,7 @@ public class BaitTrap {
         }*/
     }
     public boolean trapping(final AltoClef mod, final List<Entity> nearbyHostiles) {
-        final boolean mining = MeteorClientPlace.packetBreakBlocks(mod.getWorld(), toBreak);
+        final boolean mining = MeteorClientPlace.packetBreakBlocks(mod, toBreak);
         if (timer < WAITING_LIMIT) {
             System.out.println("waiting");
             /*if (!onlySkeletons && !mining) {

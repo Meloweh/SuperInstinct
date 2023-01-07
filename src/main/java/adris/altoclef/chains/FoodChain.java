@@ -232,7 +232,10 @@ public class FoodChain extends SingleTaskChain {
         int foodLevel = player.getHungerManager().getFoodLevel();
         float health = player.getHealth();
 
-        if (health <= 10 && foodLevel <= 19) {
+        if (health <= 12 && foodLevel <= 19) {
+            return true;
+        }
+        if (health < 20 && foodLevel < 17) {
             return true;
         }
         //Debug.logMessage("FOOD: " + foodLevel + " -- HEALTH: " + health);

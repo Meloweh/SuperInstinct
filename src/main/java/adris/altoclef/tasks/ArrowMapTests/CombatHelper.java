@@ -6,18 +6,25 @@ package adris.altoclef.tasks.ArrowMapTests;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.TaskCatalogue;
+import adris.altoclef.tasks.defense.DefenseConstants;
+import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.tasks.slot.MoveItemToSlotTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.ItemTarget;
+import adris.altoclef.util.helpers.LookHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
 import baritone.api.utils.input.Input;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.slot.SlotActionType;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class CombatHelper {
     private static boolean IS_HOLDING_SHIELD = false;
@@ -108,5 +115,24 @@ public class CombatHelper {
             startShielding(mod);
         }
         return false;
+    }
+    private static void attack(final AltoClef mod, final Entity entity) {
+        LookHelper.lookAt(mod, entity.getEyePos());
+        mod.getControllerExtras().attack(entity);
+    }
+    public static void punchNearestHostile(final AltoClef mod, final boolean forceField, List<Entity> entities) {
+        final List<Entity> hostiles = entities.stream().filter(e -> !(e instanceof ProjectileEntity) && mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList());
+        if (hostiles.isEmpty()) return;
+        if (forceField) {
+            mod.getSlotHandler().forceDeequipHitTool();
+            hostiles.forEach(e -> attack(mod, e));
+        } else {
+            final Entity entity = hostiles.get(0);
+            KillEntityTask.equipWeapon(mod);
+            float hitProg = mod.getPlayer().getAttackCooldownProgress(0);
+            if (hitProg >= 1) {
+                attack(mod, entity);
+            }
+        }
     }
 }

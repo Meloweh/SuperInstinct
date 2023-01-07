@@ -5,6 +5,7 @@ import adris.altoclef.Debug;
 import adris.altoclef.control.KillAura;
 import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.defense.*;
+import adris.altoclef.tasks.defense.chess.Queen;
 import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.tasks.movement.*;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
@@ -12,8 +13,6 @@ import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.util.MovementCounter;
 import adris.altoclef.util.baritone.CachedProjectile;
 import adris.altoclef.util.helpers.*;
-import adris.altoclef.util.slots.PlayerSlot;
-import adris.altoclef.util.slots.Slot;
 import adris.altoclef.util.time.TimerGame;
 import baritone.Baritone;
 import baritone.api.utils.input.Input;
@@ -28,8 +27,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
@@ -62,7 +59,7 @@ public class MobDefenseChain extends SingleTaskChain {
     private BaitTrapV2 baitTrap;
 
     public TPAura tpAura = new TPAura();
-    private CombatHandler combatHandler = new CombatHandler();
+    //private CombatHandler combatHandler = new CombatHandler();
     private MobHatV2 mobHat = new MobHatV2();
 
     public MobDefenseChain(TaskRunner runner) {
@@ -129,6 +126,7 @@ public class MobDefenseChain extends SingleTaskChain {
 
         }
 
+        if (mod.getPlayer().isDead()) mod.getWorld().disconnect();
         //System.out.println(mod.getWorld().getRegistryKey().getValue().getPath());
         //if (mod.getTaskRunner().getCurrentTaskChain() != null && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null)
         //    System.out.println(mod.getTaskRunner().getCurrentTaskChain().getTasks().size());
@@ -142,7 +140,7 @@ public class MobDefenseChain extends SingleTaskChain {
                                 && !(e instanceof ProjectileEntity))
                         .collect(Collectors.toList());*/
                 final List<Entity> veryCloseHostiles = mod.getEntityTracker().getHostiles().stream()
-                        .filter(e -> e.distanceTo(mod.getPlayer()) < 3
+                        .filter(e -> e.distanceTo(mod.getPlayer()) <= 3
                                 //&& !(e instanceof SkeletonEntity)
                                 //&& !(e instanceof CreeperEntity)
                                 && !(e instanceof ProjectileEntity))
@@ -152,15 +150,19 @@ public class MobDefenseChain extends SingleTaskChain {
                 safeToEat = isFilled;
                 if (!isFilled) {
                     if (veryCloseHostiles.size() > 0) {
+                        /*
                         final BlockPos overPlayer = new BlockPos(mod.getPlayer().getEyePos()).up().up();
                         final Vec3d tpGoal = new Vec3d(overPlayer.getX() + 0.5, overPlayer.getY(), overPlayer.getZ() + 0.5);
                         if (mod.getPlayer().isOnGround() && TPAura.canTpThere(mod, tpGoal)) {
                             TPAura.tp(mod, tpGoal);
                         } else {
                             // hit 'em
-                        }
+                        }*/
+                        Queen.nextJump(mod);
+                    } else {
+                        SecurityShelterTask.attemptShelter(mod);
                     }
-                    SecurityShelterTask.attemptShelter(mod);
+
                 } else {
 
                 }
@@ -245,34 +247,58 @@ public class MobDefenseChain extends SingleTaskChain {
         if (baitTrap == null) {
             baitTrap = new BaitTrap(mod);
         }
-        final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
+        final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()
                 .filter(e -> LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.HOSTILE_DISTANCE))
                 .collect(Collectors.toList());
         //final List<Entity> withoutSeeing = mod.getEntityTracker().getCloseEntities().stream().filter(e -> e instanceof HostileEntity && mod.getPlayer().distanceTo(e) < DefenseConstants.HOSTILE_DISTANCE).collect(Collectors.toList());
-        if (nearbyHostiles.size() > 0) {
+        if (closeHostiles.size() > 0) {
             System.out.println("fixate");
             if (!baitTrap.isActive()) {
-                baitTrap.fixateTrap(mod, nearbyHostiles);
+                baitTrap.fixateTrap(mod, closeHostiles);
             }
         }
         if (baitTrap.isActive()) {
             System.out.println("trapping");
-            baitTrap.trapping(mod, nearbyHostiles);
+            baitTrap.trapping(mod, closeHostiles);
         } else {
             System.out.println("reset");
             baitTrap.reset(mod);
         }*/
+        /*
         if (baitTrap == null) {
             baitTrap = new BaitTrapV2(mod);
         }
-        final List<Entity> nearbyHostiles = mod.getEntityTracker().getHostiles().stream()
-                .filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.NEARBY_DISTANCE+2/*LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)*/)
+        final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()
+                .filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.NEARBY_DISTANCE+2 || e instanceof SkeletonEntity && mod.getPlayer().distanceTo(e) <= DefenseConstants.HOSTILE_DISTANCE)
                 .collect(Collectors.toList());
-        if (nearbyHostiles.size() > 0) {
-            //System.out.println("fixate");
-            if (!baitTrap.isActive()) baitTrap.init(mod);
+        if (closeHostiles.size() > 0) {
+            final List<Entity> spiders = closeHostiles.stream().filter(e -> e instanceof SpiderEntity).collect(Collectors.toList());
+            punchNearestHostile(mod, false, spiders);
+            if (spiders.stream().filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).count() > 1 && mod.getPlayer().getHealth() < 10) {
+                baitTrap.reset(mod);
+                Queen.nextJump(mod);
+            }
+            if (!baitTrap.isActive()) baitTrap.init(mod, closeHostiles);
         }
-        if (baitTrap.isActive()) baitTrap.trapping(mod);
+        if (baitTrap.isActive()) {
+            baitTrap.trapping(mod);
+        } else {
+            if (mod.getPlayer().getHealth() < 7) {
+                if (SecurityShelterTask.canAttemptShelter(mod)) {
+                    punchNearestHostile(mod, !SecurityShelterTask.isFilled(mod), closeHostiles);
+                    SecurityShelterTask.attemptShelter(mod);
+                }
+            } else if (closeHostiles.stream().filter(e -> mod.getPlayer().distanceTo(e) < 3).count() > 0) {
+                punchNearestHostile(mod, false, closeHostiles);
+                Queen.nextJump(mod);
+            }
+        }*/
+        if (!tpAura.attemptAura(mod)) {
+            Debug.logMessage("crying...");
+            Queen.nextJump(mod);
+        }
+        basicDefenseManager.onTick(mod);
+
         return 0;
     }
 

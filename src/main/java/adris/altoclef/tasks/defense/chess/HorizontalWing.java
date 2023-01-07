@@ -77,7 +77,7 @@ public class HorizontalWing {
                 line.add(wing2D);
             }
         }
-        System.out.println("line size: " + line.size());
+        //System.out.println("line size: " + line.size());
         //Collections.reverse(line);
         //final int remaining = distance - line.size() - 1 <= 0 ? 0 : distance - line.size() - 1;
         for (int i = line.size() - 1; i > 0; i--) {
@@ -119,12 +119,12 @@ public class HorizontalWing {
                 }*/
             }
 
-            System.out.println("partingDistanceUsage: " + partingDistanceUsage);
-            System.out.println("i: " + i);
+            //System.out.println("partingDistanceUsage: " + partingDistanceUsage);
+            //System.out.println("i: " + i);
             final int dim2D = partingDistanceUsage * i;
-            System.out.println("dim2D: " + dim2D);
+            //System.out.println("dim2D: " + dim2D);
             int masssummeDifferenz = Consts.MAX_ABSOLUTE_DISTANCE - (partingDistanceUsage + i);
-            System.out.println("masssummeDifferenz: " + masssummeDifferenz);
+            //System.out.println("masssummeDifferenz: " + masssummeDifferenz);
             if (masssummeDifferenz < 0) masssummeDifferenz = 0;
             int remainingScendingDist = dim2D < 1 ? 0 : Consts.MAX_PASSABLE_VOLUME / dim2D;
             int remainingAscendingDist = Math.min(masssummeDifferenz, dim2D < 1 ? Consts.MAX_ASCEND : Math.min(remainingScendingDist, Consts.MAX_ASCEND )); //remainingScendingDist < Consts.MAX_ASCEND ? remainingScendingDist : Consts.MAX_ASCEND;
@@ -132,8 +132,8 @@ public class HorizontalWing {
                     0
                     :
                     dim2D < 1 ? Consts.MAX_DESCEND : Math.min(remainingScendingDist, Consts.MAX_DESCEND));//remainingScendingDist < Consts.MAX_DESCEND ? remainingScendingDist : Consts.MAX_DESCEND;
-            System.out.println("remainingAscendingDist: " + remainingAscendingDist);
-            System.out.println("remainingDescendingDist: " + remainingDescendingDist);
+            //System.out.println("remainingAscendingDist: " + remainingAscendingDist);
+            //System.out.println("remainingDescendingDist: " + remainingDescendingDist);
             final VerticalWing vWing = new VerticalWing(world, wing.getFeet().offset(Direction.DOWN, remainingDescendingDist), wing.getFeet().offset(Direction.UP, remainingAscendingDist), floorRequired);
             //this.failed = hWing.hasFailed();
             this.founding = vWing.getFounding();

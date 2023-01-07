@@ -3,13 +3,17 @@ package adris.altoclef.control;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.util.ItemTarget;
+import adris.altoclef.util.MiningRequirement;
+import adris.altoclef.util.helpers.BuildingBlockHelper;
 import adris.altoclef.util.helpers.ItemHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.CursorSlot;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
 import adris.altoclef.util.time.TimerGame;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.*;
@@ -115,9 +119,22 @@ public class SlotHandler {
         }
         return false;
     }
-
+    /**
+     * @return True if this material is affected by gravity.
+     */
+    public boolean hasGravity(final Item item) {
+        if (!(item instanceof BlockItem)) {
+            return false;
+        }
+        final BlockItem blockItem = (BlockItem)item;
+        final Block block = blockItem.getBlock();
+        if (block.equals(Blocks.SAND) || block.equals(Blocks.GRAVEL) || block.equals(Blocks.ANVIL)) {
+            return true;
+        }
+        return false;
+    }
     public boolean equipBlock() {
-        final List<Item> blocks = _mod.getItemStorage().getBlockTypes().stream().filter(e -> !e.isFood()).collect(Collectors.toList());
+        final List<Item> blocks = _mod.getItemStorage().getBlockTypes().stream().filter(e -> BuildingBlockHelper.isSolidBlock(e)).collect(Collectors.toList());
         if (blocks.size() < 1) return false;
         return forceEquipItem(blocks.get(0));
     }
@@ -148,6 +165,21 @@ public class SlotHandler {
 
     public boolean forceDeequipHitTool() {
         return forceDeequip(stack -> stack.getItem() instanceof ToolItem);
+    }
+
+    public ItemStack getHoldingItem() {
+        return StorageHelper.getItemStackInSlot(PlayerSlot.getEquipSlot());
+    }
+    public boolean isHoldingTool() {
+        return getHoldingItem().getItem() instanceof ToolItem;
+    }
+    public boolean holdDefaultTool(final AltoClef mod) {
+        final BlockState defaultState = Blocks.STONE.getDefaultState();
+        if (!StorageHelper.miningRequirementMet(mod, MiningRequirement.getMinimumRequirementForBlock(defaultState.getBlock()))) {
+            return false;
+        }
+        equipBestToolFor(defaultState);
+        return true;
     }
 
     public void forceDeequipRightClickableItem() {

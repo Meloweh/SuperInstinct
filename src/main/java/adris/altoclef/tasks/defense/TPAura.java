@@ -1,11 +1,9 @@
 package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.Debug;
 import adris.altoclef.chains.MobDefenseChain;
-import adris.altoclef.tasks.ArrowMapTests.BowArrowIntersectionTracer;
-import adris.altoclef.tasks.ArrowMapTests.CollisionFeedback;
-import adris.altoclef.tasks.ArrowMapTests.SimMovementState;
-import adris.altoclef.tasks.ArrowMapTests.TraceResult;
+import adris.altoclef.tasks.ArrowMapTests.*;
 import adris.altoclef.tasks.defense.chess.Queen;
 import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.util.MovementCounter;
@@ -14,10 +12,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.mob.CreeperEntity;
-import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.entity.mob.PhantomEntity;
-import net.minecraft.entity.mob.SkeletonEntity;
+import net.minecraft.entity.mob.*;
 import net.minecraft.entity.passive.FoxEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ArrowEntity;
@@ -45,6 +40,7 @@ public class TPAura {
     //private Optional<SkeletonEntity> recentSource = Optional.empty();
     private Optional<BlockPos> prev = Optional.empty();
     private final static Random rand = new Random();
+    private BaitTrapV2 baitTrap;
 
     private static void cancelFall(final AltoClef mod) {
         mod.getPlayer().networkHandler.sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(true));
@@ -113,6 +109,12 @@ public class TPAura {
             }
             return result;
         });
+        for (Entity nearbyHostile : nearbyHostiles) {
+            if (mod.getPlayer().getBlockPos().equals(nearbyHostile.getBlockPos())) {
+                Queen.nextJump(mod);
+                return true;
+            }
+        }
         used.removeIf(e -> e == null || e.isRegionUnloaded() || e.horizontalCollision || e.verticalCollision || e.isOnGround() || e.distanceTo(mod.getPlayer()) > 70);
         final List<ArrowEntity> arrows = mod.getEntityTracker().getTrackedEntities(ArrowEntity.class).stream()
                 .filter(e -> (int)Math.ceil(distanceTo(e.getPos(), mod.getPlayer().getPos())) < DefenseConstants.TP_RADIUS && !e.horizontalCollision && !e.verticalCollision && !used.contains(e))
@@ -134,13 +136,19 @@ public class TPAura {
             attacking = false;
             //System.out.println("nearbyHostiles.size() < 1");
         }
-
+        if (baitTrap == null) {
+            baitTrap = new BaitTrapV2(mod);
+        }
+        if (mod.getPlayer().isDead()) {
+            baitTrap.reset(mod);
+        }
         boolean tryAttack = true;
         if (tryAttack && skulls.size() > 0) {
             /*if (chorusTp(mod, false, 64)) {
                 used.addAll(skulls);
                 tryAttack = false;
             }*/
+            baitTrap.reset(mod);
             if (Queen.attemptJump(mod, true)) {
                 used.addAll(skulls);
                 tryAttack = false;
@@ -158,12 +166,15 @@ public class TPAura {
             final Vec3d tweakedTpGoal = new Vec3d(rawTpGoal.getX(), fixedY, rawTpGoal.getZ());//rawTpGoal.add(0, i, 0);
             if (canTpThere(tweakedTpGoal, mod)) {
                 used.add(arrow);
+                baitTrap.reset(mod);
                 tp(mod, rawTpGoal);
                 tryAttack = false;
             }
             if (tryAttack) {
                 System.out.println("cannot dodge");
-                chorusTp(mod, true);
+                //chorusTp(mod, true);
+                baitTrap.reset(mod);
+                Queen.nextJump(mod);
             } else {
                 System.out.println("can dodge");
             }
@@ -191,22 +202,24 @@ public class TPAura {
                 //final BlockPos eyeBlock = new BlockPos(eye);
                 //final BlockPos tpGoal = eyeBlock.up();
                 final Vec3d tpGoal = hCenterOf(eye).add(0, 1, 0);
-                final Vec3d aboveTpGoal = tpGoal.add(0, 1, 0);
+                //final Vec3d aboveTpGoal = tpGoal.add(0, 1, 0);
 
                 if (entity instanceof CreeperEntity && entity.distanceTo(mod.getPlayer()) <= DefenseConstants.CREEPER_RADIUS) {
                     final CreeperEntity creeper = (CreeperEntity) entity;
                     if (isCreeperCritical(creeper)) {
                         //chorusTp(mod, true);
+                        baitTrap.reset(mod);
                         Queen.attemptJump(mod, true);
                         return true;
                     }
                     return false;
                 }
-
+                /*
                 final boolean canTpUpUp = canTpThere(aboveTpGoal, mod);
                 if (canTpUpUp && mobHat.canAttemptHat(mod)) {
                     tp(mod, aboveTpGoal);
-                }
+                }*/
+                /*
                 attacking = mobHat.attemptHat(mod);
                 final boolean canTpUp = canTpThere(tpGoal, mod);
                 //System.out.println(canTpUp);
@@ -223,8 +236,38 @@ public class TPAura {
                         mod.getControllerExtras().attack(entity);
                     }
                     attacking = true;
-                }
+                }*/
             } while (entityIt.hasNext() && !attacking);
+        }
+        final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()
+                .filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.NEARBY_DISTANCE+2 || e instanceof SkeletonEntity && mod.getPlayer().distanceTo(e) <= DefenseConstants.HOSTILE_DISTANCE/*LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)*/)
+                .collect(Collectors.toList());
+        if (closeHostiles.size() > 0) {
+            final List<Entity> spiders = closeHostiles.stream().filter(e -> e instanceof SpiderEntity).collect(Collectors.toList());
+            CombatHelper.punchNearestHostile(mod, false, spiders);
+            if (spiders.stream().filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).count() > 1 && mod.getPlayer().getHealth() < 10) {
+                baitTrap.reset(mod);
+                Queen.nextJump(mod);
+            }
+            if (!baitTrap.isActive()) baitTrap.init(mod, closeHostiles);
+        }
+        if (baitTrap.isActive()) {
+            baitTrap.trapping(mod);
+        } else {
+            if (mod.getPlayer().getHealth() < 7) {
+                if (SecurityShelterTask.canAttemptShelter(mod)) {
+                    CombatHelper.punchNearestHostile(mod, !SecurityShelterTask.isFilled(mod), closeHostiles);
+                    SecurityShelterTask.attemptShelter(mod);
+                }
+            } else if (closeHostiles.stream().filter(e -> mod.getPlayer().distanceTo(e) < 3).count() > 0) {
+                CombatHelper.punchNearestHostile(mod, false, closeHostiles);
+                Queen.nextJump(mod);
+            } else if (!mobHat.attemptHat(mod)) {
+                if (CombatHelper.hasShield(mod)) {
+                    CombatHelper.startShielding(mod);
+                }
+                CombatHelper.punchNearestHostile(mod, false, closeHostiles);
+            }
         }
         return true;
     }
