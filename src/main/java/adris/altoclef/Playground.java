@@ -4,6 +4,7 @@ import adris.altoclef.butler.WhisperChecker;
 import adris.altoclef.tasks.ArrowMapTests.LastAttackTestTask;
 import adris.altoclef.tasks.CraftGenericManuallyTask;
 import adris.altoclef.tasks.Test.BaitTrapTest;
+import adris.altoclef.tasks.defense.DefenseConstants;
 import adris.altoclef.tasks.defense.SecurityShelterTask;
 import adris.altoclef.tasks.construction.PlaceBlockNearbyTask;
 import adris.altoclef.tasks.construction.PlaceSignTask;
@@ -40,6 +41,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.SkeletonEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.item.Item;
@@ -55,6 +57,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 /**
  * For testing.
@@ -381,6 +384,13 @@ public class Playground {
                     Entity skel = skels.get(0);
                     System.out.println(LookHelper.seesPlayer(skel, mod.getPlayer(), 16));
                 }
+
+                break;
+            case "tracked":
+                System.out.println("hostiles: " + mod.getEntityTracker().getHostiles().size());
+                System.out.println("close: " + mod.getEntityTracker().getCloseEntities().size());
+                System.out.println("close hostiles: " + mod.getEntityTracker().getCloseEntities().stream().filter(e -> e instanceof HostileEntity).collect(Collectors.toList()).size());
+                System.out.println("close hostiles that we see: " + mod.getEntityTracker().getCloseEntities().stream().filter(e -> e instanceof HostileEntity && LookHelper.playerSeesEntity(e, mod.getPlayer(), DefenseConstants.PUNCH_RADIUS)).collect(Collectors.toList()).size());
 
                 break;
             case "kill":

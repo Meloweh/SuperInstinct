@@ -75,7 +75,9 @@ public interface LookHelper {
     static boolean seesPlayer(Entity entity, Entity player, double maxRange, Vec3d entityOffs, Vec3d playerOffs) {
         return seesPlayerOffset(entity, player, maxRange, entityOffs, playerOffs) || seesPlayerOffset(entity, player, maxRange, entityOffs, new Vec3d(0, -1, 0).add(playerOffs));
     }
-
+    static boolean playerSeesEntity(Entity entity, Entity player, double maxRange) {
+        return seesPlayer(player, entity, maxRange);
+    }
     static boolean seesPlayer(Entity entity, Entity player, double maxRange) {
         return seesPlayer(entity, player, maxRange, Vec3d.ZERO, Vec3d.ZERO);
     }

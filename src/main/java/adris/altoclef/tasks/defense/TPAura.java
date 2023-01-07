@@ -190,6 +190,8 @@ public class TPAura {
                 System.out.println("cannot dodge"); // TODO (done): ok but then fight if possible
             }*/
         }
+        //String debug = "nothing";
+        List<String> debug = new LinkedList<>();
         if (tryAttack && nearbyHostiles.size() > 0) {
             MobDefenseChain.safeToEat = false;
             //nearbyHostiles.sort((a, b) -> (int) ((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer()))*1000));
@@ -208,9 +210,15 @@ public class TPAura {
                     final CreeperEntity creeper = (CreeperEntity) entity;
                     if (isCreeperCritical(creeper)) {
                         //chorusTp(mod, true);
+                        debug.add("reset bait and tp to escape creeper");
                         baitTrap.reset(mod);
-                        Queen.attemptJump(mod, true);
+                        if (!Queen.attemptJump(mod, true) && !Queen.attemptJump(mod, false)) {
+                            tp(mod, mod.getPlayer().getPos().add(0, 1, 0));
+                        }
                         return true;
+                    } else if (mod.getPlayer().distanceTo(creeper) <= DefenseConstants.PUNCH_RADIUS) {
+                        debug.add("punching nearby due to creeper");
+                        CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()));
                     }
                     return false;
                 }
@@ -239,36 +247,45 @@ public class TPAura {
                 }*/
             } while (entityIt.hasNext() && !attacking);
         }
+        baitTrap.tickCooldown();
         final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()
                 .filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.NEARBY_DISTANCE+2 || e instanceof SkeletonEntity && mod.getPlayer().distanceTo(e) <= DefenseConstants.HOSTILE_DISTANCE/*LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.NEARBY_DISTANCE)*/)
                 .collect(Collectors.toList());
         if (closeHostiles.size() > 0) {
-            final List<Entity> spiders = closeHostiles.stream().filter(e -> e instanceof SpiderEntity).collect(Collectors.toList());
+            final List<Entity> spiders = mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()).stream().filter(e -> e instanceof SpiderEntity).collect(Collectors.toList());
             CombatHelper.punchNearestHostile(mod, false, spiders);
+            debug.add("punchNearestHostile");
             if (spiders.stream().filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).count() > 1 && mod.getPlayer().getHealth() < 10) {
                 baitTrap.reset(mod);
                 Queen.nextJump(mod);
+                debug.add("escape from spider");
             }
             if (!baitTrap.isActive()) baitTrap.init(mod, closeHostiles);
+            if (!baitTrap.isActive()) {
+                CombatHelper.punchNearestHostile(mod, !mobHat.attemptHat(mod), mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()));
+            }
         }
         if (baitTrap.isActive()) {
+            debug.add("trapping");
             baitTrap.trapping(mod);
         } else {
-            if (mod.getPlayer().getHealth() < 7) {
-                if (SecurityShelterTask.canAttemptShelter(mod)) {
-                    CombatHelper.punchNearestHostile(mod, !SecurityShelterTask.isFilled(mod), closeHostiles);
-                    SecurityShelterTask.attemptShelter(mod);
-                }
-            } else if (closeHostiles.stream().filter(e -> mod.getPlayer().distanceTo(e) < 3).count() > 0) {
-                CombatHelper.punchNearestHostile(mod, false, closeHostiles);
+            if (closeHostiles.stream().filter(e -> mod.getPlayer().distanceTo(e) < 3).count() > 0) {
+                //CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()));
                 Queen.nextJump(mod);
-            } else if (!mobHat.attemptHat(mod)) {
+                debug.add("tping because hostiles too close");
+            } /*else if (!mobHat.attemptHat(mod)) {
                 if (CombatHelper.hasShield(mod)) {
                     CombatHelper.startShielding(mod);
                 }
-                CombatHelper.punchNearestHostile(mod, false, closeHostiles);
-            }
+                CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()));
+            }*/
         }
+        CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()));
+        String result = "";
+        for (String s : debug) {
+            result+=" => "+s;
+        }
+        if (debug.size() > 0) System.out.println(result);
         return true;
     }
 

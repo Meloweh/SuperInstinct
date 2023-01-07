@@ -2,6 +2,7 @@ package adris.altoclef.chains;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.Settings;
+import adris.altoclef.tasks.defense.DefenseConstants;
 import adris.altoclef.tasks.resources.CollectFoodTask;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
 import adris.altoclef.tasksystem.Task;
@@ -21,6 +22,7 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class FoodChain extends SingleTaskChain {
@@ -170,6 +172,8 @@ public class FoodChain extends SingleTaskChain {
         if (!hasFood) {
             _requestFillup = false;
         }
+        //if (mod.getEntityTracker().getHostiles().stream().filter(e -> mod.getPlayer().distanceTo(e) > DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList()).size() > 0) return Float.NEGATIVE_INFINITY;
+        if (mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()).size() > 0) return Float.NEGATIVE_INFINITY;
         if (hasFood && (needsToEat() || _requestFillup) && MobDefenseChain.safeToEat() && _cachedPerfectFood.isPresent() &&
                 !mod.getMLGBucketChain().isChorusFruiting() && !mod.getPlayer().isBlocking() &&
                 mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
@@ -231,8 +235,10 @@ public class FoodChain extends SingleTaskChain {
         assert player != null;
         int foodLevel = player.getHungerManager().getFoodLevel();
         float health = player.getHealth();
-
-        if (health <= 12 && foodLevel <= 19) {
+        if (health < 10 && foodLevel < 20) {
+            return true;
+        }
+        if (health < 14 && foodLevel < 19) {
             return true;
         }
         if (health < 20 && foodLevel < 17) {

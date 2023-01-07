@@ -17,6 +17,7 @@ import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
 import baritone.api.utils.input.Input;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -121,7 +122,7 @@ public class CombatHelper {
         mod.getControllerExtras().attack(entity);
     }
     public static void punchNearestHostile(final AltoClef mod, final boolean forceField, List<Entity> entities) {
-        final List<Entity> hostiles = entities.stream().filter(e -> !(e instanceof ProjectileEntity) && mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList());
+        final List<Entity> hostiles = mod.getEntityTracker().getCloseEntities().stream().filter(e -> e instanceof HostileEntity).collect(Collectors.toList()).stream().filter(e -> !(e instanceof ProjectileEntity) && mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList());
         if (hostiles.isEmpty()) return;
         if (forceField) {
             mod.getSlotHandler().forceDeequipHitTool();

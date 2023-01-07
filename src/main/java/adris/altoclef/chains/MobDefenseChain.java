@@ -126,6 +126,10 @@ public class MobDefenseChain extends SingleTaskChain {
 
         }
 
+        if (mod.getPlayer().isSubmergedInWater() && mod.getPlayer().getAir() < 1) {
+            Queen.nextJump(mod);
+        }
+
         if (mod.getPlayer().isDead()) mod.getWorld().disconnect();
         //System.out.println(mod.getWorld().getRegistryKey().getValue().getPath());
         //if (mod.getTaskRunner().getCurrentTaskChain() != null && mod.getTaskRunner().getCurrentTaskChain().getTasks() != null)
@@ -139,8 +143,8 @@ public class MobDefenseChain extends SingleTaskChain {
                                 //&& !(e instanceof CreeperEntity)
                                 && !(e instanceof ProjectileEntity))
                         .collect(Collectors.toList());*/
-                final List<Entity> veryCloseHostiles = mod.getEntityTracker().getHostiles().stream()
-                        .filter(e -> e.distanceTo(mod.getPlayer()) <= 3
+                final List<Entity> veryCloseHostiles = mod.getEntityTracker().getCloseEntities().stream()
+                        .filter(e -> e instanceof HostileEntity && e.distanceTo(mod.getPlayer()) < 4
                                 //&& !(e instanceof SkeletonEntity)
                                 //&& !(e instanceof CreeperEntity)
                                 && !(e instanceof ProjectileEntity))

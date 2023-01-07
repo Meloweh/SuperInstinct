@@ -1,6 +1,7 @@
 package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.chains.FoodChain;
 import adris.altoclef.chains.MobDefenseChain;
 import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
 import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
@@ -16,6 +17,7 @@ import adris.altoclef.util.slots.Slot;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.PhantomEntity;
 import net.minecraft.entity.mob.SkeletonEntity;
 import net.minecraft.entity.mob.ZombieEntity;
@@ -42,6 +44,8 @@ public class BaitTrapV2 {
     private boolean doneChamber, doneTpInChamber, doneHatch, doneWaiting, doneClosing;
     private int timerClosingHatch;
     private Direction dir;
+    private final static int INIT_COOLDOWN = 7;
+    private int cooldownInit;
     public void reset(final AltoClef mod) {
         active = false;
         pinnedPos = null;
@@ -61,6 +65,7 @@ public class BaitTrapV2 {
     }
 
     private boolean ensureFloor(final AltoClef mod) {
+        System.out.println("ensureFloor");
         if (mod.getWorld().getBlockState(pinnedPos.offset(Direction.DOWN, 4)).isAir()) {
             if (mod.getItemStorage().getBlockCount() < 1) {
                 return false;
@@ -77,6 +82,7 @@ public class BaitTrapV2 {
         return !mining;
     }
     private void tpChamber(final AltoClef mod) {
+        System.out.println("tpChamber");
         TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pinnedPos.offset(Direction.DOWN, 3)));
     }
     private boolean mineHatch(final AltoClef mod) {
@@ -90,7 +96,7 @@ public class BaitTrapV2 {
         return !mining;
     }
     private boolean murderBabies(final AltoClef mod) {
-        final List<ZombieEntity> babies = mod.getEntityTracker().getHostiles().stream().filter(e -> e instanceof ZombieEntity && ((ZombieEntity) e).isBaby()).map(e -> (ZombieEntity)e).collect(Collectors.toList());
+        final List<ZombieEntity> babies = mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()).stream().filter(e -> e instanceof ZombieEntity && ((ZombieEntity) e).isBaby()).map(e -> (ZombieEntity)e).collect(Collectors.toList());
         if (babies.isEmpty()) return false;
         final ZombieEntity entity = babies.get(0);
         KillEntityTask.equipWeapon(mod);
@@ -101,14 +107,23 @@ public class BaitTrapV2 {
         }
         return true;
     }
+    public void tickCooldown() {
+        if (cooldownInit > 0) {
+            cooldownInit--;
+        }
+    }
     public void init(final AltoClef mod, final List<Entity> entities) {
         System.out.println("iunit");
-
+        if (cooldownInit > 0) {
+            System.out.println("cooldown not 0");
+            return;
+        }
         reset(mod);
         pinnedPos = mod.getPlayer().getBlockPos();
         dir = LookHelper.randomDirection2D();
         active = canTrapHere(mod, entities);
         if (!active) {
+            System.out.println(" => init !canTrapHere");
             reset(mod);
             Queen.nextJump(mod);
         }
@@ -117,11 +132,18 @@ public class BaitTrapV2 {
         //System.out.println("trapping");
         mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
         //if (!doneChamber && !canTrapHere(mod)) return false;
+        String debug = "";
         if (mod.getWorld().getBlockState(pinnedPos.down()).isAir()) {
             BasicDefenseManager.fill(mod, pinnedPos.down());
+            System.out.println("filling pinnedPos");
+
         }
-        if (!ensureFloor(mod)) return false;
+        if (!ensureFloor(mod)) {
+            if (debug != "") System.out.println(debug);
+            return false;
+        }
         MobDefenseChain.safeToEat = false;
+        debug += " => doneChamber = " + doneChamber;
         if (!doneChamber) TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pinnedPos));
         /*if (!doneChamber) {
             final List<Entity> sees = mod.getEntityTracker().getHostiles().stream().filter(e -> LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.HOSTILE_DISTANCE)).collect(Collectors.toList());
@@ -137,31 +159,65 @@ public class BaitTrapV2 {
             Queen.nextJump(mod);
         }
         if (!doneChamber) doneChamber = mineChamber(mod);
-        if (!doneChamber) return false;
+        if (!doneChamber) {
+            System.out.println(debug);
+            return false;
+        }
+        debug += " => doneHatch = " + doneHatch;
+
         if (!mod.getPlayer().getBlockPos().equals(pinnedPos.offset(Direction.DOWN, 3))) tpChamber(mod);
-        if (!mod.getPlayer().getBlockPos().equals(pinnedPos.offset(Direction.DOWN, 3))) return false;
+        if (!mod.getPlayer().getBlockPos().equals(pinnedPos.offset(Direction.DOWN, 3))) {
+            System.out.println(debug);
+            return false;
+        }
         if (!doneHatch || !doneWaiting) {
             final List<Entity> sees = mod.getEntityTracker().getHostiles().stream().filter(e -> LookHelper.seesPlayer(e, mod.getPlayer(), DefenseConstants.HOSTILE_DISTANCE)).collect(Collectors.toList());
             if (!sees.isEmpty()) {
                 reset(mod);
                 Queen.nextJump(mod);
                 System.out.println("STILL SEES PLAYER");
+                System.out.println(debug);
                 return false;
             }
         }
         MobDefenseChain.safeToEat = true;
         if (!doneHatch) doneHatch = mineHatch(mod);
-        if (!doneHatch) return false;
-        if (!doneWaiting) doneWaiting = timer++ > WAITING_LIMIT;
-        if (!doneWaiting && !murderBabies(mod)) CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getHostiles().stream().filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList()));//murderBabies(mod);
-        if (!doneWaiting) return false;
+        if (!doneHatch) {
+            System.out.println(debug);
+            return false;
+        }
+        debug += " => doneWaiting = " + doneWaiting;
+        if (!doneWaiting) {
+            doneWaiting = timer++ > WAITING_LIMIT;
+            if (mod.getFoodChain().needsToEat()) {
+                timer = 0;
+            }
+            if (mod.getEntityTracker().getHostiles().size() > 0 && mod.getPlayer().getHealth() < 7) {
+                timer = WAITING_LIMIT*2;
+            }
+        }
+        if (!doneWaiting) CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()));//murderBabies(mod);
+        //if (!doneWaiting && !murderBabies(mod)) CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getHostiles().stream().filter(e -> mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList()));//murderBabies(mod);
+        if (!doneWaiting) {
+            System.out.println(debug);
+            return false;
+        }
+        debug += " => doneClosing = " + doneClosing;
         TPAura.tp(mod, BlockPosHelper.toVec3dCenter(pinnedPos));
         doneClosing = !mod.getWorld().getBlockState(pinnedPos.offset(dir, 1)).isAir() || timerClosingHatch++ >= 5;
         if (!doneClosing) BasicDefenseManager.fill(mod, pinnedPos.offset(dir, 1));
-        if (!doneClosing) return false;
+        if (!doneClosing) {
+            System.out.println(debug);
+            return false;
+        }
+        debug += " => finishing";
+
+        cooldownInit = INIT_COOLDOWN;
         Queen.attemptJump(mod);
+        CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()));
         active = false;
         System.out.println("active: " + active);
+        if (debug != "") System.out.println(debug);
         return true;
     }
     public boolean isActive() {

@@ -4,20 +4,16 @@ import adris.altoclef.Debug;
 import adris.altoclef.eventbus.EventBus;
 import adris.altoclef.eventbus.events.PlayerCollidedWithEntityEvent;
 import adris.altoclef.mixins.PersistentProjectileEntityAccessor;
+import adris.altoclef.tasks.defense.DefenseConstants;
 import adris.altoclef.trackers.blacklisting.EntityLocateBlacklist;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.baritone.CachedProjectile;
-import adris.altoclef.util.helpers.BaritoneHelper;
-import adris.altoclef.util.helpers.EntityHelper;
-import adris.altoclef.util.helpers.ProjectileHelper;
-import adris.altoclef.util.helpers.WorldHelper;
+import adris.altoclef.util.helpers.*;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.mob.SkeletonEntity;
-import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.entity.mob.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.FishingBobberEntity;
 import net.minecraft.entity.projectile.PersistentProjectileEntity;
@@ -29,6 +25,7 @@ import net.minecraft.util.math.Vec3d;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Keeps track of entities so we can search/grab them.
@@ -246,6 +243,17 @@ public class EntityTracker extends Tracker {
         synchronized (BaritoneHelper.MINECRAFT_LOCK) {
             return _closeEntities;
         }
+    }
+    public List<Entity> getPunchableHostiles(final ClientPlayerEntity player) {
+        final List<Entity> nearstHostiles = getCloseEntities().stream().filter(e -> e instanceof HostileEntity && LookHelper.playerSeesEntity(e, player, DefenseConstants.PUNCH_RADIUS)).collect(Collectors.toList());
+        nearstHostiles.sort((a, b) -> {
+            int result = Double.compare(b.getBoundingBox().getYLength(), a.getBoundingBox().getYLength());
+            if (result == 0) {
+                result = Float.compare(a.distanceTo(player), b.distanceTo(player));//(int) ((a.distanceTo(mod.getPlayer()) - b.distanceTo(mod.getPlayer()))*1000);
+            }
+            return result;
+        });
+        return nearstHostiles;
     }
 
     /**
