@@ -205,8 +205,8 @@ public class TaskCatalogue {
             }
             // shapedRecipe2x2("stick", Items.STICK, 4, p, o, p, o);
             simple("stick", Items.STICK, CollectSticksTask::new);
-            //smelt("stone", Items.STONE, "cobblestone").dontMineIfPresent(); //original
-            simple("stone", Items.STONE, CollectStoneTask::new).anyDimension(); //changed
+            smelt("stone", Items.STONE, "cobblestone").dontMineIfPresent(); //original
+            //simple("stone", Items.STONE, CollectStoneTask::new).anyDimension(); //changed
             //simple("hay_block", Items.HAY_BLOCK, CollectHayBlockTask::new).dontMineIfPresent();
             //simple("stone", Items.STONE, CollectStoneTask::new).forceDimension(Dimension.OVERWORLD);
             smelt("deepslate", Items.DEEPSLATE, "cobbled_deepslate").dontMineIfPresent();
