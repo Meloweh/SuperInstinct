@@ -210,6 +210,9 @@ public class TPAura {
                     final CreeperEntity creeper = (CreeperEntity) entity;
                     if (isCreeperCritical(creeper)) {
                         //chorusTp(mod, true);
+                        if (CombatHelper.isHoldingShield()) {
+                            CombatHelper.startShielding(mod);
+                        }
                         debug.add("reset bait and tp to escape creeper");
                         baitTrap.reset(mod);
                         if (!Queen.attemptJump(mod, true) && !Queen.attemptJump(mod, false)) {
@@ -219,6 +222,10 @@ public class TPAura {
                     } else if (mod.getPlayer().distanceTo(creeper) <= DefenseConstants.PUNCH_RADIUS) {
                         debug.add("punching nearby due to creeper");
                         CombatHelper.punchNearestHostile(mod, false, mod.getEntityTracker().getPunchableHostiles(mod.getPlayer()));
+                        if (CombatHelper.hasShield(mod)) {
+                            CombatHelper.startShielding(mod);
+                            LookHelper.lookAt(mod, creeper.getEyePos());
+                        }
                     }
                     return false;
                 }
@@ -246,6 +253,9 @@ public class TPAura {
                     attacking = true;
                 }*/
             } while (entityIt.hasNext() && !attacking);
+        }
+        if (CombatHelper.isHoldingShield()) {
+            CombatHelper.stopShielding(mod);
         }
         baitTrap.tickCooldown();
         final List<Entity> closeHostiles = mod.getEntityTracker().getHostiles().stream()

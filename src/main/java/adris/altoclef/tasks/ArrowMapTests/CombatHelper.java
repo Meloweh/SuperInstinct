@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 public class CombatHelper {
     private static boolean IS_HOLDING_SHIELD = false;
-
+    private static Optional<Entity> shieldingReason = Optional.empty();
     public static boolean hasShield(final AltoClef mod) {
         return mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD);
     }
@@ -70,6 +70,9 @@ public class CombatHelper {
 
     public static boolean isHoldingShield() {
         return IS_HOLDING_SHIELD;
+    }
+    public static Optional<Entity> getShieldingReason() {
+        return shieldingReason;
     }
     public static void startShielding(AltoClef mod) {
         ItemStack handItem = StorageHelper.getItemStackInSlot(PlayerSlot.getEquipSlot());

@@ -232,45 +232,52 @@ public class SchematicBuildTask extends Task {
         int requiredIron = 0;
         int currentIron = mod.getItemStorage().getItemCount(Items.IRON_INGOT);
         if (mod.getItemStorage().bestHelmetInInventory().isEmpty() && !StorageHelper.isHelmetEquipped(mod)) {
-            if (currentIron >= 5) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_HELMET));
-            }
             requiredIron += 5;
         } else if (!StorageHelper.isHelmetEquipped(mod)) {
             return new EquipArmorTask(Items.IRON_HELMET);
         }
 
         if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isChestplateEquipped(mod)) {
-            if (currentIron >= 8) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_CHESTPLATE));
-            }
             requiredIron += 8;
         } else if (!StorageHelper.isChestplateEquipped(mod)) {
             return new EquipArmorTask(Items.IRON_CHESTPLATE);
         }
 
         if (mod.getItemStorage().bestBootsInInventory().isEmpty() && !StorageHelper.isBootsEquipped(mod)) {
-            if (currentIron >= 4) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_BOOTS));
-            }
             requiredIron += 4;
         } else if (!StorageHelper.isBootsEquipped(mod)) {
             return new EquipArmorTask(Items.IRON_BOOTS);
         }
 
         if (mod.getItemStorage().bestLeggingsInInventory().isEmpty() && !StorageHelper.isLeggingsEquipped(mod)) {
-            if (currentIron >= 7) {
-                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_LEGGINGS));
-            }
             requiredIron += 7;
         } else if (!StorageHelper.isLeggingsEquipped(mod)) {
             return new EquipArmorTask(Items.IRON_LEGGINGS);
         }
-
-        /*if (requiredIron > 0 && currentIron < requiredIron) {
+        if (requiredIron > 0 && currentIron < requiredIron) {
             setDebugState("Sourcing " + requiredIron + " iron...");
             return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_INGOT, requiredIron));
-        }*/
+        }
+        if (mod.getItemStorage().bestHelmetInInventory().isEmpty() && !StorageHelper.isHelmetEquipped(mod)) {
+            if (currentIron >= 5) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_HELMET));
+            }
+        }
+        if (mod.getItemStorage().bestChestplateInInventory().isEmpty() && !StorageHelper.isChestplateEquipped(mod)) {
+            if (currentIron >= 8) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_CHESTPLATE));
+            }
+        }
+        if (mod.getItemStorage().bestBootsInInventory().isEmpty() && !StorageHelper.isBootsEquipped(mod)) {
+            if (currentIron >= 4) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_BOOTS));
+            }
+        }
+        if (mod.getItemStorage().bestLeggingsInInventory().isEmpty() && !StorageHelper.isLeggingsEquipped(mod)) {
+            if (currentIron >= 7) {
+                return TaskCatalogue.getItemTask(new ItemTarget(Items.IRON_LEGGINGS));
+            }
+        }
         //}
         if (getMissing() != null && !getMissing().isEmpty() && (builder.isPaused() || !builder.isFromAltoclef()) || !builder.isActive()) {
             for (final BlockState state : getTodoList(mod, missing)) {
