@@ -298,7 +298,7 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }*/
         if (!tpAura.attemptAura(mod)) {
-            Debug.logMessage("crying...");
+            Debug.logMessage("struggling...");
             Queen.nextJump(mod);
         }
         basicDefenseManager.onTick(mod);

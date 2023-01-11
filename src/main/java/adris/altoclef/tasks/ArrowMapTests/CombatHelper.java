@@ -124,8 +124,8 @@ public class CombatHelper {
         LookHelper.lookAt(mod, entity.getEyePos());
         mod.getControllerExtras().attack(entity);
     }
-    public static void punchNearestHostile(final AltoClef mod, final boolean forceField, List<Entity> entities) {
-        final List<Entity> hostiles = mod.getEntityTracker().getCloseEntities().stream().filter(e -> e instanceof HostileEntity).collect(Collectors.toList()).stream().filter(e -> !(e instanceof ProjectileEntity) && mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList());
+    public static void punchNearestHostile(final AltoClef mod, final boolean forceField, List<Entity> hostiles) {
+        //final List<Entity> hostiles = mod.getEntityTracker().getCloseEntities().stream().filter(e -> e instanceof HostileEntity).collect(Collectors.toList()).stream().filter(e -> !(e instanceof ProjectileEntity) && mod.getPlayer().distanceTo(e) <= DefenseConstants.PUNCH_RADIUS).collect(Collectors.toList());
         if (hostiles.isEmpty()) return;
         if (forceField) {
             mod.getSlotHandler().forceDeequipHitTool();

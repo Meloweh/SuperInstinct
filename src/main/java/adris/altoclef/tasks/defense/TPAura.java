@@ -227,7 +227,7 @@ public class TPAura {
                             LookHelper.lookAt(mod, creeper.getEyePos());
                         }
                     }
-                    return false;
+                    return true;
                 }
                 /*
                 final boolean canTpUpUp = canTpThere(aboveTpGoal, mod);

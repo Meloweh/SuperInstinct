@@ -245,7 +245,7 @@ public class EntityTracker extends Tracker {
         }
     }
     public List<Entity> getPunchableHostiles(final ClientPlayerEntity player) {
-        final List<Entity> nearstHostiles = getCloseEntities().stream().filter(e -> e instanceof HostileEntity && LookHelper.playerSeesEntity(e, player, DefenseConstants.PUNCH_RADIUS)).collect(Collectors.toList());
+        final List<Entity> nearstHostiles = getCloseEntities().stream().filter(e -> e instanceof HostileEntity && LookHelper.playerSeesEntity(e, player, DefenseConstants.PUNCH_RADIUS) && (!(e instanceof ZombifiedPiglinEntity))).collect(Collectors.toList());
         nearstHostiles.sort((a, b) -> {
             int result = Double.compare(b.getBoundingBox().getYLength(), a.getBoundingBox().getYLength());
             if (result == 0) {
