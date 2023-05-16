@@ -10,7 +10,6 @@ import net.minecraft.util.math.Vec3d;
 public class YawHelper {
     /**
      * @author Brady, Welomeh, Meloweh
-     * @since 9/25/2018
      */
     private static final double DEG_TO_RAD = Math.PI / 180.0;
     private static final double RAD_TO_DEG = 180.0 / Math.PI;
@@ -23,7 +22,6 @@ public class YawHelper {
 
     /**
      * @author Brady, Welomeh, Meloweh
-     * @since 9/25/2018
      */
     public static float vecToYaw(Vec3d orig, Vec3d dest) {
         double[] delta = {orig.x - dest.x, orig.y - dest.y, orig.z - dest.z};

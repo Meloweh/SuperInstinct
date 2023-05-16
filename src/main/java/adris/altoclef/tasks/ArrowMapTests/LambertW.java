@@ -27,7 +27,7 @@ package adris.altoclef.tasks.ArrowMapTests;
 
 /*
 * Author:  G. Jungman
-* Provided to Altoclef by Meloweh.
+* Provided to Altoclef by Meloweh, Welomeh.
 * */
 
 /* Started with code donated by K. Briggs; added
