@@ -37,6 +37,9 @@ import java.util.List;
  * along with SuperInstinct.  If not, see <https://www.gnu.org/licenses/>.
  *
  * Copyright (C) 2023 MelowehAndWelomeh
+ *
+ * Thanks to Meteor Client on GitHub who coded airplace:
+ * https://github.com/MeteorDevelopment/meteor-client
  */
 public class MeteorClientPlace {
     private static Vec3d hitPos = new Vec3d(0, 0, 0);
