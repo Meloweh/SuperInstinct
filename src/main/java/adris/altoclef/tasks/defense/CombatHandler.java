@@ -2,7 +2,7 @@ package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.chains.MobDefenseChain;
-import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
+import welomehandmeloweh.superinstinct.BasicDefenseManager;
 import adris.altoclef.tasks.defense.chess.Queen;
 import adris.altoclef.tasks.defense.chess.VerticalWing;
 import adris.altoclef.tasks.defense.chess.Wing1D;
@@ -15,9 +15,7 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.SkeletonEntity;
-import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;

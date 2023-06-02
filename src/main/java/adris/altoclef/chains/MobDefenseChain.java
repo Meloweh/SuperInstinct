@@ -3,7 +3,7 @@ package adris.altoclef.chains;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.control.KillAura;
-import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
+import welomehandmeloweh.superinstinct.BasicDefenseManager;
 import adris.altoclef.tasks.defense.*;
 import adris.altoclef.tasks.defense.chess.Queen;
 import adris.altoclef.tasks.entity.KillEntityTask;

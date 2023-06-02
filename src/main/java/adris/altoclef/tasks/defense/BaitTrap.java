@@ -1,25 +1,22 @@
 package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
-import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
-import adris.altoclef.tasks.ArrowMapTests.CombatHelper;
-import adris.altoclef.tasks.ArrowMapTests.MeteorClientPlace;
+import welomehandmeloweh.superinstinct.BasicDefenseManager;
+import welomehandmeloweh.superinstinct.CombatHelper;
+import welomehandmeloweh.superinstinct.MeteorClientPlace;
 import adris.altoclef.tasks.defense.chess.Queen;
 import adris.altoclef.util.MiningRequirement;
 import adris.altoclef.util.helpers.BlockPosHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.SkeletonEntity;
 import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 public class BaitTrap {
     private BlockPos pinnedPos;

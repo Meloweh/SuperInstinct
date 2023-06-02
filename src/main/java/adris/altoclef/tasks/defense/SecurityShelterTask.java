@@ -1,9 +1,7 @@
 package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
-import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
-import adris.altoclef.tasksystem.Task;
-import adris.altoclef.util.helpers.StorageHelper;
+import welomehandmeloweh.superinstinct.BasicDefenseManager;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 

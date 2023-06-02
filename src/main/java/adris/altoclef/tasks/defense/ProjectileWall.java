@@ -1,9 +1,8 @@
 package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
-import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
+import welomehandmeloweh.superinstinct.BasicDefenseManager;
 import adris.altoclef.util.helpers.LookHelper;
-import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.PillagerEntity;
 import net.minecraft.entity.mob.SkeletonEntity;
@@ -12,7 +11,6 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ProjectileWall {

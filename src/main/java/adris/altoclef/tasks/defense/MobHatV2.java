@@ -1,12 +1,11 @@
 package adris.altoclef.tasks.defense;
 
 import adris.altoclef.AltoClef;
-import adris.altoclef.tasks.ArrowMapTests.BasicDefenseManager;
+import welomehandmeloweh.superinstinct.BasicDefenseManager;
 import adris.altoclef.tasks.SchematicBuildTask;
 import adris.altoclef.util.helpers.LookHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.mob.SpiderEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;

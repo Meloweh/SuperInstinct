@@ -1,7 +1,7 @@
 package adris.altoclef;
 
 import adris.altoclef.butler.WhisperChecker;
-import adris.altoclef.tasks.ArrowMapTests.LastAttackTestTask;
+import welomehandmeloweh.superinstinct.LastAttackTestTask;
 import adris.altoclef.tasks.CraftGenericManuallyTask;
 import adris.altoclef.tasks.Test.BaitTrapTest;
 import adris.altoclef.tasks.defense.DefenseConstants;
