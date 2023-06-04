@@ -6,13 +6,13 @@
 
 ## Description
 
-The project "Super Instinct" was developed by my partner and me over about 12 months in our spare time.
+The project "Super Instinct" was developed by my partner and me over a timespan of about 12 months in our spare time.
 
 It was developed as a kind of add-on for a Minecraft modification called "Altoclef" as a supplement.
 Altoclef is an automation tool with the end goal of fully automating the game.
 
-Our goal was to develop a completely accurate arrow tracking to make predictions about future collisions (Meaning the arrow as a projectile of a bow).
-The player should get an early warning system in his environment to be able to move to safety automatically afterwards.
+Our goal was to develop a completely accurate arrow tracking algorithm to provide predictions about future collisions (Meaning the arrow as a projectile of a bow).
+The player should get an early warning system in his environment and by that introducing effective projectile avoidance to the automated movement system of baritone.
 
 We did reverse engineering to derive formulas from the original code that would give double precision readings, then proved each formula and idea mathematically and kept records of it.
 
@@ -20,13 +20,20 @@ We worked out numerous ideas and solutions to problems, taking into account ever
 It required a steady stream of creative problem solving and a great deal of perseverance to avoid getting stuck in dead ends.
 Whether the project would succeed was unclear for the longest time due to its nature.
 
-We heavily optimized our formulas and code system because it was important to us to find a clean and scalable solution. It was also necessary because it was not foreseeable how well our add-on would run on conventional computers.
+We heavily optimized our formulas and code system because it was important to us to find a clean and scalable solution. It was also necessary because it was not foreseeable how well our add-on would perform on a conventional computer.
 
-The project was successfully completed at the end of 2022.
+The project is very large and includes about 60 Java class files but also numerous notes, sketches, concepts and proofs that need some preparation before we release them too.
 
-The project is very large and includes about 60 Java class files and numerous notes, sketches, concepts and proofs.
-At your request we can go into detail about the project in a personal meeting.
-This will also give you an insight into said resources.
+## Bugs
+Y-Tracing has a buggy case distinction somewhere that we did not fix and that results in a crash.
+We did not fix it because we concluded the project prior to it.
+
+## Conclusion
+- The project was completed at the end of 2022.
+During our efforts we found that there is a loss of positional and velocity accuracy of projectiles on client side, since they are being synchronized with a compressed short (16-bit) value by the server.
+The original vector is represented by double precision (64-bit) what means that with each execution cycle of the game there is an accumulation of imprecision.
+If we could get ahold of one double precision value at some point while a projectile is airborn on client side, we would be able to precicely track the server side arrow on the client.
+- Execution time depends on your pc hardware. On a ten year old computer we got execution times around 0.5ms up to 15ms but 3-10 ms most of the time. We also the algorithm non-blocking for that reason.
 
 ## Early test measurements in the game (videos)
 
