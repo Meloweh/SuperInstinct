@@ -1,73 +1,62 @@
-# altoclef
+# "Super Instinct" (2021-2022)
 
-Plays block game.
+- A fork of [Altoclef](https://github.com/gaucho-matrero/altoclef)
 
-Powered by Baritone.
+- This project is about a modification for the game [Minecraft](https://www.minecraft.net/)
 
-A client side bot that can accomplish any Minecraft task that is relatively simple and can be split into smaller
-tasks. "Relatively Simple" is a vague term, so check the list of current capabilities to see examples.
+## Description
 
-Became [the first bot to beat Minecraft fully autonomously](https://youtu.be/baAa6s8tahA) on May 24, 2021.
+The project "Super Instinct" was developed by my partner and me over about 12 months in our spare time.
 
-**Join the [Discord Server](https://discord.gg/fUUEHeNmXb)** for discussions/updates/goofs & gaffs
+It was developed as a kind of add-on for a Minecraft modification called "Altoclef" as a supplement.
+Altoclef is an automation tool with the end goal of fully automating the game.
 
-## How it works
+Our goal was to develop a completely accurate arrow tracking to make predictions about future collisions (Meaning the arrow as a projectile of a bow).
+The player should get an early warning system in his environment to be able to move to safety automatically afterwards.
 
-Take a look at this [Guide from the wiki](https://github.com/gaucho-matrero/altoclef/wiki/1:-Documentation:-Big-Picture)
-or this [Video explanation](https://youtu.be/q5OmcinQ2ck?t=387)
+We did reverse engineering to derive formulas from the original code that would give double precision readings, then proved each formula and idea mathematically and kept records of it.
 
-## Current capabilities, Examples:
+We worked out numerous ideas and solutions to problems, taking into account every conceivable factor and complexity that might arise during interaction with the video game itself.
+It required a steady stream of creative problem solving and a great deal of perseverance to avoid getting stuck in dead ends.
+Whether the project would succeed was unclear for the longest time due to its nature.
 
-- Obtain 400+ Items from a fresh survival world, like diamond armor, cake, and nether brick stairs
-- Dodge mob projectiles and force field mobs away while accomplishing arbitrary tasks
-- Collect + smelt food from animals, hay, & crops
-- Receive commands from chat whispers via /msg. Whitelist + Blacklist configurable (hereby dubbed the Butler System).
-  Here's
-  a [Butler system demo video](https://drive.google.com/file/d/1axVYYMJ5VjmVHaWlCifFHTwiXlFssOUc/view?usp=sharing)
-- Simple config file that can be reloaded via command (check .minecraft directory)
-- Beat the entire game on its own (no user input.)
-- Print the entire bee movie script with signs in a straight line, automatically collecting signs + bridging materials
-  along the way.
-- Become the terminator: Run away from players while unarmed, gather diamond gear in secret, then return and wreak
-  havoc.
+We heavily optimized our formulas and code system because it was important to us to find a clean and scalable solution. It was also necessary because it was not foreseeable how well our add-on would run on conventional computers.
 
-## Download
+The project was successfully completed at the end of 2022.
 
-**Note:** After installing, please move/delete your old baritone configurations if you have any. Preexisting baritone
-configurations will interfere with altoclef and introduce bugs. This will be fixed in the future.
+The project is very large and includes about 60 Java class files and numerous notes, sketches, concepts and proofs.
+At your request we can go into detail about the project in a personal meeting.
+This will also give you an insight into said resources.
 
-### Nightly Release (Recommended) (has the latest bug fixes)
+## Early test measurements in the game (videos)
 
-Start by downloading [the Latest Long Term Release](https://github.com/gaucho-matrero/altoclef/releases),
-then [Download the Nightly](https://nightly.link/gaucho-matrero/altoclef/workflows/gradle/main/Artifacts.zip) &
-replace `altoclef-4.0-SNAPSHOT.jar`.
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/amOkU9PKZEo/0.jpg)](http://www.youtube.com/watch?v=amOkU9PKZEo "Flexibility Arrow Tracing Test")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/Rnh-gSojYYI/0.jpg)](http://www.youtube.com/watch?v=Rnh-gSojYYI "Y-Axis Arrow Tracing Test")
 
-If the Nightly Link doesn't work, check the latest [Build Action](https://github.com/gaucho-matrero/altoclef/actions)
-that succeeded and download `Artifacts.zip` (you must be signed into GitHub). Replace your
-existing `altoclef-4.0-SNAPSHOT.jar` with the one found in `Artifacts.zip`
+## Primitive evasion strategies as proof of concept (videos).
 
-### Long Term Release
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/kbSDZqueH8c/0.jpg)](http://www.youtube.com/watch?v=kbSDZqueH8c "Proof of Concept Demo (Dodge by Stopping) #1")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/t7_LrYOVkU4/0.jpg)](http://www.youtube.com/watch?v=t7_LrYOVkU4 "Proof of Concept Demo (Dodge by Stopping) #2")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/xZwwnwIu9Ic/0.jpg)](http://www.youtube.com/watch?v=xZwwnwIu9Ic "Proof of Concept Demo (Dodge by Jumping)")
 
-[Check releases](https://github.com/gaucho-matrero/altoclef/releases). Note you will need to copy over both jar files
-for the mod to work.
+## Demonstration of the first executable version with independent entities as attackers (videos)
 
-### Meloweh's Extra Features Release (Unofficial)
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/tdR7Gxb9jjk/0.jpg)](http://www.youtube.com/watch?v=tdR7Gxb9jjk "Skeleton Arrow Dodge Test #1")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/8MFC06wTh4E/0.jpg)](http://www.youtube.com/watch?v=8MFC06wTh4E "Skeleton Arrow Dodge Test #2")
 
-Has some schematic support, command macros and a few utility features. Will eventually be merged, but if you can try it
-out now if you'd like:
+## (Extra)
 
-- [AltoClef jar](https://github.com/Meloweh/altoclef/releases)
-- [Baritone jar](https://github.com/Meloweh/baritone/releases)
+In the Altoclef project, in addition to "Super Instinct", I also worked on the compatibility between the automatic building function of the "Baritone" mod and the Altoclef mod, where the focus is on the production of resources, but uses the resource acquisition function of Baritone.
+However, it was also necessary to significantly improve the overall survivability of the player bot so that it can complete construction even on difficult difficulty settings.
+The features I implemented include:
+- Representation strategies against monsters (traps, deciding when, what to do).
+- Bug fix (Various soft locks fixed)
+- Server compatibility (teleportation when constructing the trap according to multiplayer server guidelines)
+- Collaboration of the Building feature of Baritone with Altoclef
 
-### Versions
+### Video
 
-This is a **fabric only** mod, currently only available for **Minecraft 1.18**.
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/xA-V-ruogsk/0.jpg)](http://www.youtube.com/watch?v=xA-V-ruogsk "(1.19.2) Builder task successful for the first time in hard difficulty")
 
-For older MC versions, try [multiconnect](https://www.curseforge.com/minecraft/mc-mods/multiconnect) (NOTE: multiconnect
-is untested and not affiliated with altoclef, use at your own risk!)
-
-## [Usage Guide](usage.md)
-
-## [TODO's/Future Features](todos.md)
-
-## [Development Guide](develop.md)
+## Languages
+- Java
