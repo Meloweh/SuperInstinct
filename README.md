@@ -58,7 +58,7 @@ However, it was also necessary to significantly improve the overall survivabilit
 The features I implemented include:
 - Representation strategies against monsters (traps, deciding when, what to do).
 - Bug fix (Various soft locks fixed)
-- Server compatibility (teleportation when constructing the trap according to multiplayer server guidelines)
+- Teleportation when constructing the trap (This was the one strategy that improved the chance for survival by a lot.
 - Collaboration of the Building feature of Baritone with Altoclef
 
 ### Video
