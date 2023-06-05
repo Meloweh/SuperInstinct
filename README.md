@@ -33,7 +33,7 @@ We did not fix it because we concluded the project prior to it.
 During our efforts we found that there is a loss of positional and velocity accuracy of projectiles on client side, since they are being synchronized with a compressed short (16-bit) value by the server.
 The original vector is represented by double precision (64-bit) what means that with each execution cycle of the game there is an accumulation of imprecision.
 If we could get ahold of one double precision value at some point while a projectile is airborn on client side, we would be able to precicely track the server side arrow on the client.
-- Execution time depends on your pc hardware. On a ten year old computer we got execution times around 0.5ms up to 15ms but 3-10 ms most of the time. We also the algorithm non-blocking for that reason.
+- Execution time depends on your pc hardware. On a ten year old computer we got execution times around 0.5ms up to 15ms but it averages at about 3-10ms most of the time. Execution is done non-blocking for that reason.
 
 ## Early test measurements in the game (videos)
 
