@@ -37,19 +37,23 @@ If we could get ahold of one double precision value at some point while a projec
 
 ## Early test measurements in the game (videos)
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/amOkU9PKZEo/0.jpg)](http://www.youtube.com/watch?v=amOkU9PKZEo "Flexibility Arrow Tracing Test")
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/Rnh-gSojYYI/0.jpg)](http://www.youtube.com/watch?v=Rnh-gSojYYI "Y-Axis Arrow Tracing Test")
+https://github.com/Meloweh/SuperInstinct/assets/49780209/59cbb352-8a74-4d0d-82cf-8668f8f85b2e
+
+https://github.com/Meloweh/SuperInstinct/assets/49780209/e15581b1-49f2-4c19-9c31-104b64e418aa
 
 ## Primitive evasion strategies as proof of concept (videos).
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/kbSDZqueH8c/0.jpg)](http://www.youtube.com/watch?v=kbSDZqueH8c "Proof of Concept Demo (Dodge by Stopping) #1")
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/t7_LrYOVkU4/0.jpg)](http://www.youtube.com/watch?v=t7_LrYOVkU4 "Proof of Concept Demo (Dodge by Stopping) #2")
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/xZwwnwIu9Ic/0.jpg)](http://www.youtube.com/watch?v=xZwwnwIu9Ic "Proof of Concept Demo (Dodge by Jumping)")
+https://github.com/Meloweh/SuperInstinct/assets/49780209/1416e7a1-09ab-4faa-84ba-ffea64a49f88
+
+https://github.com/Meloweh/SuperInstinct/assets/49780209/3de32373-775c-4412-8dd3-1f4fa260f113
+
+https://github.com/Meloweh/SuperInstinct/assets/49780209/f7df34e2-fc36-4e22-b02b-8c0fc35e5087
 
 ## Demonstration of the first executable version with independent entities as attackers (videos)
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/tdR7Gxb9jjk/0.jpg)](http://www.youtube.com/watch?v=tdR7Gxb9jjk "Skeleton Arrow Dodge Test #1")
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/8MFC06wTh4E/0.jpg)](http://www.youtube.com/watch?v=8MFC06wTh4E "Skeleton Arrow Dodge Test #2")
+https://github.com/Meloweh/SuperInstinct/assets/49780209/5e01af52-61e5-4af2-b690-d7a1567ee26e
+
+https://github.com/Meloweh/SuperInstinct/assets/49780209/9245b7e4-c3d0-4eff-8e03-f55e8e731d8e
 
 ## (Extra)
 
